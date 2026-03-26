@@ -49,7 +49,7 @@ function money(n: number) {
 }
 
 function statusChip(status: InvoiceStatus) {
-  const common = { size: 'small' as const, sx: { borderRadius: 999 } };
+  const common = { size: 'small' as const, sx: { borderRadius: 8 } };
   switch (status) {
     case 'Paid':
       return <Chip {...common} label="Paid" color="success" />;
@@ -67,12 +67,9 @@ function GlassCard({ children }: { children: React.ReactNode }) {
     <Card
       variant="outlined"
       sx={(t) => ({
-        borderRadius: 4,
-        borderColor: alpha(t.palette.divider, 0.8),
-        background:
-          t.palette.mode === 'light'
-            ? `linear-gradient(180deg, ${alpha('#ffffff', 0.92)}, ${alpha('#ffffff', 0.86)})`
-            : undefined,
+        borderRadius: 2,
+        borderColor: alpha(t.palette.divider, 0.85),
+        backgroundImage: `linear-gradient(180deg, ${alpha('#ffffff', 0.05)}, ${alpha('#ffffff', 0.02)})`,
         backdropFilter: 'blur(10px)',
       })}
     >
@@ -165,18 +162,10 @@ export function InvoicesPage() {
           </Typography>
         </Box>
         <Stack direction="row" spacing={1} alignItems="center">
-          <Button
-            variant="outlined"
-            startIcon={<FilterListIcon />}
-            sx={{ borderRadius: 999, textTransform: 'none' }}
-          >
+          <Button variant="outlined" startIcon={<FilterListIcon />} sx={{ borderRadius: 10 }}>
             Filters
           </Button>
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            sx={{ borderRadius: 999, textTransform: 'none', fontWeight: 900 }}
-          >
+          <Button variant="contained" startIcon={<AddIcon />} sx={{ borderRadius: 10, fontWeight: 900 }}>
             Create invoice
           </Button>
         </Stack>
@@ -193,7 +182,7 @@ export function InvoicesPage() {
         <MetricCard label="Overdue" value={`₹ ${money(31211)}`} sub="2 invoices" accent="#ef4444" />
         <MetricCard label="Due within next month" value={`₹ ${money(172560)}`} sub="12 invoices" accent="#f59e0b" />
         <MetricCard label="Avg time to get paid" value="12 days" sub="Last 90 days" accent="#06b6d4" />
-        <MetricCard label="Instant payout" value={`₹ ${money(214390)}`} sub="Available now" accent="#8b5cf6" />
+        <MetricCard label="Instant payout" value={`₹ ${money(214390)}`} sub="Available now" accent="#7c3aed" />
       </Box>
 
       {/* Main area */}
@@ -211,10 +200,10 @@ export function InvoicesPage() {
           >
             <Stack direction="row" spacing={1} alignItems="center" sx={{ flexWrap: 'wrap' }}>
               <Typography fontWeight={900}>Active</Typography>
-              <Chip size="small" label="All customers" sx={{ borderRadius: 999 }} />
-              <Chip size="small" label="All statuses" sx={{ borderRadius: 999 }} />
-              <Chip size="small" label="Nov" sx={{ borderRadius: 999 }} />
-              <Chip size="small" label="Dec" sx={{ borderRadius: 999 }} />
+              <Chip size="small" label="All customers" sx={{ borderRadius: 8 }} />
+              <Chip size="small" label="All statuses" sx={{ borderRadius: 8 }} />
+              <Chip size="small" label="Nov" sx={{ borderRadius: 8 }} />
+              <Chip size="small" label="Dec" sx={{ borderRadius: 8 }} />
             </Stack>
             <TextField
               size="small"
@@ -249,7 +238,7 @@ export function InvoicesPage() {
                         variant="outlined"
                         onClick={() => setSelectedId(inv.id)}
                         sx={(t) => ({
-                          borderRadius: 3,
+                          borderRadius: 2,
                           cursor: 'pointer',
                           transition: 'border-color 140ms ease, background 140ms ease',
                           borderColor: active ? alpha(t.palette.primary.main, 0.55) : alpha(t.palette.divider, 0.9),
@@ -289,7 +278,7 @@ export function InvoicesPage() {
             <Box sx={{ flex: 1, display: { xs: 'none', md: 'block' } }}>
               <Card
                 sx={{
-                  borderRadius: 4,
+                  borderRadius: 2,
                   color: 'rgba(255,255,255,0.92)',
                   overflow: 'hidden',
                   border: `1px solid ${alpha('#ffffff', 0.08)}`,
@@ -309,7 +298,7 @@ export function InvoicesPage() {
                       <Chip
                         size="small"
                         label={`# ${selected.invoiceNo}`}
-                        sx={{ bgcolor: 'rgba(255,255,255,0.10)', color: 'rgba(255,255,255,0.92)', borderRadius: 999 }}
+                        sx={{ bgcolor: 'rgba(255,255,255,0.10)', color: 'rgba(255,255,255,0.92)', borderRadius: 8 }}
                       />
                       <Box>{statusChip(selected.status)}</Box>
                     </Stack>
@@ -325,7 +314,7 @@ export function InvoicesPage() {
                       gap: 1.5,
                     }}
                   >
-                    <Card sx={{ bgcolor: 'rgba(255,255,255,0.06)', borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <Card sx={{ bgcolor: 'rgba(255,255,255,0.06)', borderRadius: 2, border: '1px solid rgba(255,255,255,0.08)' }}>
                       <CardContent>
                         <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.72)' }}>
                           Total due
@@ -339,7 +328,7 @@ export function InvoicesPage() {
                       </CardContent>
                     </Card>
 
-                    <Card sx={{ bgcolor: 'rgba(255,255,255,0.06)', borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <Card sx={{ bgcolor: 'rgba(255,255,255,0.06)', borderRadius: 2, border: '1px solid rgba(255,255,255,0.08)' }}>
                       <CardContent>
                         <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.72)' }}>
                           Company
@@ -356,7 +345,7 @@ export function InvoicesPage() {
                       </CardContent>
                     </Card>
 
-                    <Card sx={{ bgcolor: 'rgba(255,255,255,0.06)', borderRadius: 3, border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <Card sx={{ bgcolor: 'rgba(255,255,255,0.06)', borderRadius: 2, border: '1px solid rgba(255,255,255,0.08)' }}>
                       <CardContent>
                         <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.72)' }}>
                           Customer
@@ -397,7 +386,7 @@ export function InvoicesPage() {
                       <Chip
                         icon={<CreditCardIcon />}
                         label="Visa"
-                        sx={{ bgcolor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.86)', borderRadius: 999 }}
+                        sx={{ bgcolor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.86)', borderRadius: 8 }}
                       />
                     </Stack>
 
@@ -418,7 +407,7 @@ export function InvoicesPage() {
                           bgcolor: '#b7ff4a',
                           color: '#15240b',
                           fontWeight: 950,
-                          borderRadius: 999,
+                          borderRadius: 10,
                           textTransform: 'none',
                           '&:hover': { bgcolor: '#a7f53d' },
                         }}
