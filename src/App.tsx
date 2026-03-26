@@ -4,6 +4,7 @@ import { RequireAuth } from './components/auth/RequireAuth';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { BillingPage } from './pages/BillingPage';
+import { InvoicesPage } from './pages/InvoicesPage';
 import { ProductsPage } from './pages/ProductsPage';
 import { CustomersPage } from './pages/CustomersPage';
 import { ExpensesPage } from './pages/ExpensesPage';
@@ -25,6 +26,7 @@ export default function App() {
       >
         <Route index element={<DashboardPage />} />
         <Route path="billing" element={<BillingPage />} />
+        <Route path="invoices" element={<InvoicesPage />} />
         <Route path="products" element={<ProductsPage />} />
         <Route path="customers" element={<CustomersPage />} />
         <Route path="expenses" element={<ExpensesPage />} />

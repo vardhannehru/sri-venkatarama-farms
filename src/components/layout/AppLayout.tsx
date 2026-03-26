@@ -15,6 +15,7 @@ import {
 import MenuIcon from '@mui/icons-material/Menu';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
+import DescriptionIcon from '@mui/icons-material/Description';
 import Inventory2Icon from '@mui/icons-material/Inventory2';
 import PeopleIcon from '@mui/icons-material/People';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
@@ -36,6 +37,7 @@ export function AppLayout() {
   const items: NavItem[] = useMemo(
     () => [
       { label: 'Dashboard', path: '/', icon: <DashboardIcon /> },
+      { label: 'Invoices', path: '/invoices', icon: <DescriptionIcon /> },
       { label: 'Billing', path: '/billing', icon: <PointOfSaleIcon /> },
       { label: 'Products', path: '/products', icon: <Inventory2Icon /> },
       { label: 'Customers', path: '/customers', icon: <PeopleIcon /> },
