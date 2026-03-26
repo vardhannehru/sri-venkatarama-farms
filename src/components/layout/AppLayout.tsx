@@ -63,7 +63,7 @@ export function AppLayout() {
             width: 38,
             height: 38,
             borderRadius: 12,
-            background: `linear-gradient(135deg, ${alpha('#6d5efc', 0.9)}, ${alpha('#22c55e', 0.9)})`,
+            background: `linear-gradient(135deg, ${alpha('#7c3aed', 0.95)}, ${alpha('#22c55e', 0.55)})`,
           }}
         />
         <Box>
@@ -75,7 +75,7 @@ export function AppLayout() {
           </Typography>
         </Box>
       </Toolbar>
-      <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)' }} />
+      <Divider sx={{ borderColor: 'rgba(255,255,255,0.10)' }} />
       <List sx={{ px: 1.2, py: 1 }}>
         {items.map((it) => (
           <ListItemButton
@@ -133,13 +133,13 @@ export function AppLayout() {
         elevation={0}
         sx={(t) => ({
           zIndex: (tt) => tt.zIndex.drawer + 1,
-          background: alpha('#ffffff', 0.72),
+          background: alpha('#0b0f19', 0.78),
           color: t.palette.text.primary,
           backdropFilter: 'blur(14px)',
-          borderBottom: `1px solid ${alpha(t.palette.divider, 0.6)}`,
+          borderBottom: `1px solid ${alpha(t.palette.divider, 0.7)}`,
         })}
       >
-        <Toolbar sx={{ gap: 1.5 }}>
+        <Toolbar sx={{ gap: 1.2 }}>
           <IconButton
             color="inherit"
             edge="start"
@@ -150,23 +150,34 @@ export function AppLayout() {
           </IconButton>
 
           <Box
+            component="form"
+            onSubmit={(e) => e.preventDefault()}
             sx={(t) => ({
               flex: 1,
               display: 'flex',
               alignItems: 'center',
               gap: 1,
-              px: 1.4,
-              py: 0.7,
-              borderRadius: 999,
-              border: `1px solid ${alpha(t.palette.divider, 0.7)}`,
-              backgroundColor: alpha('#ffffff', 0.9),
-              maxWidth: 520,
+              px: 1.2,
+              py: 0.35,
+              borderRadius: 14,
+              border: `1px solid ${alpha(t.palette.divider, 0.8)}`,
+              backgroundColor: alpha('#101828', 0.85),
+              maxWidth: 560,
             })}
           >
             <SearchIcon fontSize="small" />
-            <Typography variant="body2" color="text.secondary">
-              Search products, invoices, customers…
-            </Typography>
+            <Box
+              component="input"
+              placeholder="Search products, invoices, customers…"
+              style={{
+                border: 'none',
+                outline: 'none',
+                background: 'transparent',
+                color: 'inherit',
+                width: '100%',
+                fontSize: 14,
+              }}
+            />
           </Box>
 
           <Stack direction="row" spacing={1} alignItems="center">
@@ -178,7 +189,7 @@ export function AppLayout() {
                 <NotificationsNoneIcon fontSize="small" />
               </Badge>
             </IconButton>
-            <Avatar sx={{ width: 34, height: 34, bgcolor: '#6d5efc', fontWeight: 900 }}>O</Avatar>
+            <Avatar sx={{ width: 34, height: 34, bgcolor: 'primary.main', fontWeight: 900 }}>O</Avatar>
           </Stack>
         </Toolbar>
       </AppBar>
@@ -194,7 +205,7 @@ export function AppLayout() {
             '& .MuiDrawer-paper': {
               boxSizing: 'border-box',
               width: drawerWidth,
-              background: 'linear-gradient(180deg, #0b1220, #0a1020)',
+              background: 'linear-gradient(180deg, #0b0f19, #070a12)',
             },
           }}
         >
@@ -207,7 +218,7 @@ export function AppLayout() {
             '& .MuiDrawer-paper': {
               boxSizing: 'border-box',
               width: drawerWidth,
-              background: 'linear-gradient(180deg, #0b1220, #0a1020)',
+              background: 'linear-gradient(180deg, #0b0f19, #070a12)',
               borderRight: '1px solid rgba(255,255,255,0.08)',
             },
           }}

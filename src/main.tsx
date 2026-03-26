@@ -7,42 +7,59 @@ import App from './App';
 
 const theme = createTheme({
   palette: {
-    mode: 'light',
-    primary: { main: '#6d5efc' },
+    mode: 'dark',
+    primary: { main: '#7c3aed' },
     secondary: { main: '#22c55e' },
     background: {
-      default: '#f6f7fb',
-      paper: '#ffffff',
+      default: '#0b0f19',
+      paper: '#101828',
     },
     text: {
-      primary: '#101828',
-      secondary: '#667085',
+      primary: '#eef2ff',
+      secondary: '#98a2b3',
     },
+    divider: 'rgba(255,255,255,0.10)',
   },
-  shape: { borderRadius: 18 },
+  shape: { borderRadius: 16 },
   typography: {
     fontFamily:
       'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"',
     h4: { fontWeight: 900, letterSpacing: -0.8 },
     h5: { fontWeight: 900, letterSpacing: -0.6 },
     h6: { fontWeight: 900, letterSpacing: -0.4 },
+    button: { fontWeight: 800 },
   },
   components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        body: {
+          backgroundImage:
+            'radial-gradient(1200px 600px at 20% -10%, rgba(124,58,237,0.22), transparent 55%), radial-gradient(900px 520px at 90% 0%, rgba(34,197,94,0.10), transparent 60%)',
+          backgroundAttachment: 'fixed',
+        },
+      },
+    },
     MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: 22,
-          border: '1px solid rgba(16, 24, 40, 0.06)',
-          boxShadow: '0 10px 30px rgba(16, 24, 40, 0.06)',
+          borderRadius: 18,
+          border: '1px solid rgba(255,255,255,0.10)',
+          boxShadow: '0 16px 50px rgba(0,0,0,0.35)',
+          backgroundImage:
+            'linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02))',
+          backdropFilter: 'blur(10px)',
         },
       },
     },
     MuiButton: {
       styleOverrides: {
         root: {
-          borderRadius: 999,
+          borderRadius: 12,
           textTransform: 'none',
-          fontWeight: 900,
+          fontWeight: 800,
+        },
+        contained: {
+          boxShadow: 'none',
         },
       },
     },
