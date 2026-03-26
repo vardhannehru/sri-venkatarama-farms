@@ -1,5 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import '@fontsource/plus-jakarta-sans/400.css';
+import '@fontsource/plus-jakarta-sans/600.css';
+import '@fontsource/plus-jakarta-sans/700.css';
+import '@fontsource/plus-jakarta-sans/800.css';
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
@@ -23,7 +27,7 @@ const theme = createTheme({
   shape: { borderRadius: 16 },
   typography: {
     fontFamily:
-      'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"',
+      '"Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"',
     h4: { fontWeight: 900, letterSpacing: -0.8 },
     h5: { fontWeight: 900, letterSpacing: -0.6 },
     h6: { fontWeight: 900, letterSpacing: -0.4 },
