@@ -1,5 +1,13 @@
 import { Box, Card, CardContent, Divider, Stack, Typography } from '@mui/material';
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+} from 'recharts';
 
 type SaleRow = {
   id: string;
@@ -18,6 +26,23 @@ const salesTrend = [
   { day: 'Fri', sales: 21000 },
   { day: 'Sat', sales: 32000 },
   { day: 'Sun', sales: 15000 },
+];
+
+const topProducts = [
+  { name: 'Sunflower Oil 1L', qty: 42 },
+  { name: 'Soap 100g', qty: 37 },
+  { name: 'Rice 25kg', qty: 18 },
+  { name: 'Milk 500ml', qty: 15 },
+  { name: 'Tea 250g', qty: 11 },
+];
+
+const monthlySales = [
+  { month: 'Jan', sales: 310000 },
+  { month: 'Feb', sales: 280000 },
+  { month: 'Mar', sales: 345000 },
+  { month: 'Apr', sales: 298000 },
+  { month: 'May', sales: 372000 },
+  { month: 'Jun', sales: 401000 },
 ];
 
 const recentSales: SaleRow[] = [
@@ -79,21 +104,21 @@ export function DashboardPage() {
         <KpiCard label="This Month" value="₹ 4,62,100" sub="(demo)" />
       </Box>
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '2fr 1fr' }, gap: 2 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', xl: '2fr 1fr' }, gap: 2 }}>
         <Card>
           <CardContent>
             <Typography variant="h6" fontWeight={900} gutterBottom>
-              Sales Trend
+              Sales by day (bar)
             </Typography>
             <Box sx={{ height: 320 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={salesTrend}>
+                <BarChart data={salesTrend}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="day" />
                   <YAxis />
                   <Tooltip />
-                  <Line type="monotone" dataKey="sales" stroke="#7c3aed" strokeWidth={3} dot={false} />
-                </LineChart>
+                  <Bar dataKey="sales" fill="#7c3aed" radius={[6, 6, 0, 0]} />
+                </BarChart>
               </ResponsiveContainer>
             </Box>
           </CardContent>
@@ -143,6 +168,46 @@ export function DashboardPage() {
                 </Box>
               ))}
             </Stack>
+          </CardContent>
+        </Card>
+      </Box>
+
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 2 }}>
+        <Card>
+          <CardContent>
+            <Typography variant="h6" fontWeight={900} gutterBottom>
+              Top products sold today (bar)
+            </Typography>
+            <Box sx={{ height: 320 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={topProducts} layout="vertical" margin={{ left: 24 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" />
+                  <YAxis type="category" dataKey="name" width={140} />
+                  <Tooltip />
+                  <Bar dataKey="qty" fill="#22c55e" radius={[0, 6, 6, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </Box>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent>
+            <Typography variant="h6" fontWeight={900} gutterBottom>
+              Monthly sales (bar)
+            </Typography>
+            <Box sx={{ height: 320 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={monthlySales}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="sales" fill="#60a5fa" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </Box>
           </CardContent>
         </Card>
       </Box>
