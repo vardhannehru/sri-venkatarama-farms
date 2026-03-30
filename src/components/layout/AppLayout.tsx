@@ -117,8 +117,8 @@ export function AppLayout() {
   }
 
   const drawer = (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Toolbar sx={{ px: 1.5, py: 1.25, minHeight: '72px !important' }}>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+      <Toolbar sx={{ px: 1.5, py: 1.25, minHeight: '72px !important', flexShrink: 0 }}>
         <Stack direction="row" spacing={1.2} alignItems="center" sx={{ minWidth: 0 }}>
           <Box
             sx={(t) => ({
@@ -127,6 +127,7 @@ export function AppLayout() {
               borderRadius: 3.2,
               display: 'grid',
               placeItems: 'center',
+              flexShrink: 0,
               background:
                 `radial-gradient(circle at 28% 28%, ${alpha(t.palette.primary.light, 0.55)}, transparent 42%),` +
                 `linear-gradient(135deg, ${alpha('#131a2a', 0.98)}, ${alpha('#0b0f19', 1)})`,
@@ -136,7 +137,7 @@ export function AppLayout() {
           >
             <AutoGraphIcon sx={{ fontSize: 20, color: 'primary.light' }} />
           </Box>
-          <Box sx={{ minWidth: 0 }}>
+          <Box sx={{ minWidth: 0, overflow: 'hidden' }}>
             <Typography variant="subtitle2" noWrap fontWeight={900} sx={{ letterSpacing: -0.35 }}>
               SV Integrated Farms
             </Typography>
@@ -147,7 +148,7 @@ export function AppLayout() {
         </Stack>
       </Toolbar>
 
-      <Box sx={{ px: 1.25, pb: 1.5, flex: 1, overflowY: 'auto' }}>
+      <Box sx={{ px: 1.25, pb: 1.25, flex: 1, minHeight: 0, overflowY: 'auto' }}>
         <Typography
           variant="caption"
           sx={{
@@ -183,7 +184,7 @@ export function AppLayout() {
         <List disablePadding>{items.filter((item) => item.section === 'management').map(renderNavItem)}</List>
       </Box>
 
-      <Box sx={{ p: 1.25, pt: 0 }}>
+      <Box sx={{ p: 1.25, pt: 0, flexShrink: 0 }}>
         <Box
           sx={{
             border: '1px solid rgba(255,255,255,0.08)',
@@ -192,13 +193,13 @@ export function AppLayout() {
             background: 'linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02))',
           }}
         >
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-            <Avatar sx={{ width: 34, height: 34, bgcolor: 'primary.main', fontWeight: 900 }}>O</Avatar>
-            <Box sx={{ minWidth: 0 }}>
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1, minWidth: 0 }}>
+            <Avatar sx={{ width: 34, height: 34, bgcolor: 'primary.main', fontWeight: 900, flexShrink: 0 }}>O</Avatar>
+            <Box sx={{ minWidth: 0, overflow: 'hidden' }}>
               <Typography variant="body2" fontWeight={800} noWrap>
                 Operator
               </Typography>
-              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.55)' }} noWrap>
+              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.55)', display: 'block' }} noWrap>
                 Active session
               </Typography>
             </Box>
@@ -224,7 +225,7 @@ export function AppLayout() {
               </ListItemIcon>
               <ListItemText
                 primary="Logout"
-                primaryTypographyProps={{ fontWeight: 800, fontSize: 14 }}
+                primaryTypographyProps={{ fontWeight: 800, fontSize: 14, noWrap: true }}
               />
             </ListItemButton>
           </List>
@@ -247,7 +248,13 @@ export function AppLayout() {
           boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
         })}
       >
-        <Toolbar sx={{ minHeight: '72px !important', px: { xs: 1.25, sm: 2.2 }, gap: 1.2 }}>
+        <Toolbar
+          sx={{
+            minHeight: { xs: '64px !important', md: '72px !important' },
+            px: { xs: 1.25, sm: 2.2 },
+            gap: 1.2,
+          }}
+        >
           <IconButton
             color="inherit"
             edge="start"
@@ -256,28 +263,34 @@ export function AppLayout() {
               display: { sm: 'none' },
               border: '1px solid rgba(255,255,255,0.08)',
               bgcolor: 'rgba(255,255,255,0.03)',
+              flexShrink: 0,
             }}
           >
             <MenuIcon />
           </IconButton>
 
-          <Box sx={{ minWidth: 0, flex: 1 }}>
+          <Box sx={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
             <Typography variant="h6" noWrap fontWeight={900} sx={{ letterSpacing: -0.5, lineHeight: 1.1 }}>
               {currentPage.title}
             </Typography>
-            <Typography variant="body2" noWrap sx={{ color: 'text.secondary', mt: 0.35 }}>
+            <Typography
+              variant="body2"
+              noWrap
+              sx={{ color: 'text.secondary', mt: 0.35, display: { xs: 'none', sm: 'block' } }}
+            >
               {currentPage.subtitle}
             </Typography>
           </Box>
 
           <Box
             sx={(t) => ({
-              display: { xs: 'none', md: 'flex' },
+              display: { xs: 'none', lg: 'flex' },
               alignItems: 'center',
               gap: 1,
               px: 1.5,
               py: 0.7,
-              width: 320,
+              width: 280,
+              flexShrink: 0,
               borderRadius: 999,
               border: `1px solid ${alpha(t.palette.divider, 0.75)}`,
               background: `linear-gradient(180deg, ${alpha('#111827', 0.92)}, ${alpha('#0d1522', 0.92)})`,
@@ -290,7 +303,7 @@ export function AppLayout() {
             />
           </Box>
 
-          <Stack direction="row" spacing={1} alignItems="center">
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
             <Tooltip title="Settings">
               <IconButton
                 size="small"
@@ -369,12 +382,13 @@ export function AppLayout() {
         component="main"
         sx={{
           flexGrow: 1,
+          minWidth: 0,
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           px: { xs: 1.5, sm: 2.5, md: 3 },
           py: 2.5,
         }}
       >
-        <Toolbar sx={{ minHeight: '72px !important' }} />
+        <Toolbar sx={{ minHeight: { xs: '64px !important', md: '72px !important' } }} />
         <Outlet />
       </Box>
     </Box>
