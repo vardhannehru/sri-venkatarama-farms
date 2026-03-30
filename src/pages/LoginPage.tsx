@@ -25,11 +25,14 @@ export function LoginPage() {
   return (
     <Container maxWidth="sm" sx={{ py: 8 }}>
       <Typography variant="h4" fontWeight={700} gutterBottom>
-        Shop Manager
+        Sri Venkatarama Intigrated Farms
       </Typography>
       <Typography color="text.secondary" gutterBottom>
-        Login to continue
+        Login to continue to your farm dashboard
       </Typography>
+      <Alert severity="info" sx={{ mt: 2 }}>
+        Admin: `owner / password` | Salesman: `salesman / password`
+      </Alert>
 
       <Card sx={{ mt: 3 }}>
         <CardContent>
@@ -71,9 +74,6 @@ export function LoginPage() {
             <Button type="submit" variant="contained" disabled={loading}>
               {loading ? 'Signing in…' : 'Login'}
             </Button>
-            <Typography variant="body2" color="text.secondary">
-              Demo login: any non-empty username/password works.
-            </Typography>
           </Box>
         </CardContent>
       </Card>

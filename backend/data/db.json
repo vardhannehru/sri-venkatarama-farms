@@ -1,0 +1,27 @@
+{
+  "products": [],
+  "dailyTarget": {
+    "quantity": 0
+  },
+  "dailySales": {},
+  "sessions": [
+    {
+      "token": "a868cb04-c3a1-40c6-a6cf-399487ffd1e4",
+      "userId": "user_admin"
+    }
+  ],
+  "users": [
+    {
+      "id": "user_admin",
+      "username": "owner",
+      "password": "password",
+      "role": "admin"
+    },
+    {
+      "id": "user_salesman",
+      "username": "salesman",
+      "password": "password",
+      "role": "salesman"
+    }
+  ]
+}

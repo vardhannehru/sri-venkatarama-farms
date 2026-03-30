@@ -1,47 +1,28 @@
 export type DailyTargetConfig = {
-  amount: number;
+  quantity: number;
 };
 
-export type DailySalesRecord = {
-  [date: string]: number;
-};
-
-const TARGET_KEY = 'shopapp.dailyTarget';
-const SALES_KEY = 'shopapp.dailySales';
-
-function todayKey() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function readJson<T>(key: string, fallback: T): T {
-  const raw = localStorage.getItem(key);
-  if (!raw) return fallback;
-  try {
-    return JSON.parse(raw) as T;
-  } catch {
-    return fallback;
-  }
-}
-
-function writeJson(key: string, value: unknown) {
-  localStorage.setItem(key, JSON.stringify(value));
-}
+import { apiFetch } from './api';
 
 export const dailyTargetDb = {
-  getTarget(): DailyTargetConfig {
-    return readJson<DailyTargetConfig>(TARGET_KEY, { amount: 0 });
+  async getTarget(): Promise<DailyTargetConfig> {
+    return apiFetch<DailyTargetConfig>('/daily-target');
   },
-  setTarget(amount: number) {
-    writeJson(TARGET_KEY, { amount: Math.max(0, Number(amount) || 0) });
+  async setTarget(quantity: number): Promise<DailyTargetConfig> {
+    return apiFetch<DailyTargetConfig>('/daily-target', {
+      method: 'PUT',
+      body: JSON.stringify({ quantity }),
+    });
   },
-  getTodaySales(): number {
-    const sales = readJson<DailySalesRecord>(SALES_KEY, {});
-    return Number(sales[todayKey()] ?? 0);
+  async getTodayQuantity(): Promise<number> {
+    const result = await apiFetch<{ quantity: number }>('/daily-sales/today');
+    return result.quantity;
   },
-  addSale(amount: number) {
-    const sales = readJson<DailySalesRecord>(SALES_KEY, {});
-    const key = todayKey();
-    sales[key] = Number(sales[key] ?? 0) + Math.max(0, Number(amount) || 0);
-    writeJson(SALES_KEY, sales);
+  async addSale(quantity: number): Promise<number> {
+    const result = await apiFetch<{ quantity: number }>('/daily-sales', {
+      method: 'POST',
+      body: JSON.stringify({ quantity }),
+    });
+    return result.quantity;
   },
 };

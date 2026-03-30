@@ -33,17 +33,24 @@ import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import AutoGraphIcon from '@mui/icons-material/AutoGraph';
 import { useMemo, useState } from 'react';
-import { logout } from '../../lib/auth';
+import { getCurrentUser, logout } from '../../lib/auth';
+import type { UserRole } from '../../types';
 
 const drawerWidth = 222;
 
-type NavItem = { label: string; path: string; icon: React.ReactNode; section: 'main' | 'management' };
+type NavItem = {
+  label: string;
+  path: string;
+  icon: React.ReactNode;
+  section: 'main' | 'management';
+  roles: UserRole[];
+};
 
 const pageMeta: Record<string, { title: string; subtitle: string }> = {
-  '/': { title: 'Dashboard', subtitle: 'Track sales, targets, expiry alerts, and business health.' },
+  '/': { title: 'Dashboard', subtitle: 'Track sales, targets, and business health.' },
   '/invoices': { title: 'Invoices', subtitle: 'Review billing records and customer invoices.' },
   '/billing': { title: 'Billing', subtitle: 'Create fast sales and complete daily billing.' },
-  '/products': { title: 'Products', subtitle: 'Manage inventory, stock levels, and expiry dates.' },
+  '/products': { title: 'Products', subtitle: 'Manage inventory, pricing, and stock levels.' },
   '/customers': { title: 'Customers', subtitle: 'View and manage your customer records.' },
   '/expenses': { title: 'Expenses', subtitle: 'Track outgoing costs and operating expenses.' },
   '/reports': { title: 'Reports', subtitle: 'Analyze performance with business reports.' },
@@ -54,20 +61,23 @@ export function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const currentUser = getCurrentUser();
+  const role = currentUser?.role ?? 'admin';
 
   const items: NavItem[] = useMemo(
     () => [
-      { label: 'Dashboard', path: '/', icon: <DashboardIcon />, section: 'main' },
-      { label: 'Invoices', path: '/invoices', icon: <DescriptionIcon />, section: 'main' },
-      { label: 'Billing', path: '/billing', icon: <PointOfSaleIcon />, section: 'main' },
-      { label: 'Products', path: '/products', icon: <Inventory2Icon />, section: 'main' },
-      { label: 'Customers', path: '/customers', icon: <PeopleIcon />, section: 'management' },
-      { label: 'Expenses', path: '/expenses', icon: <ReceiptLongIcon />, section: 'management' },
-      { label: 'Reports', path: '/reports', icon: <AssessmentIcon />, section: 'management' },
-      { label: 'Settings', path: '/settings', icon: <SettingsIcon />, section: 'management' },
+      { label: 'Dashboard', path: '/', icon: <DashboardIcon />, section: 'main', roles: ['admin', 'salesman'] },
+      { label: 'Invoices', path: '/invoices', icon: <DescriptionIcon />, section: 'main', roles: ['admin', 'salesman'] },
+      { label: 'Billing', path: '/billing', icon: <PointOfSaleIcon />, section: 'main', roles: ['admin', 'salesman'] },
+      { label: 'Products', path: '/products', icon: <Inventory2Icon />, section: 'main', roles: ['admin'] },
+      { label: 'Customers', path: '/customers', icon: <PeopleIcon />, section: 'management', roles: ['admin'] },
+      { label: 'Expenses', path: '/expenses', icon: <ReceiptLongIcon />, section: 'management', roles: ['admin'] },
+      { label: 'Reports', path: '/reports', icon: <AssessmentIcon />, section: 'management', roles: ['admin'] },
+      { label: 'Settings', path: '/settings', icon: <SettingsIcon />, section: 'management', roles: ['admin'] },
     ],
     []
   );
+  const visibleItems = useMemo(() => items.filter((item) => item.roles.includes(role)), [items, role]);
 
   const currentPage = pageMeta[location.pathname] ?? {
     title: 'Farm Suite',
@@ -90,15 +100,15 @@ export function AppLayout() {
           borderRadius: 3,
           mb: 0.75,
           px: 1,
-          color: selected ? '#fff' : 'rgba(255,255,255,0.74)',
-          border: `1px solid ${selected ? alpha(t.palette.primary.light, 0.34) : 'transparent'}`,
+          color: selected ? t.palette.primary.main : t.palette.text.primary,
+          border: `1px solid ${selected ? alpha(t.palette.primary.main, 0.18) : 'transparent'}`,
           background: selected
-            ? `linear-gradient(135deg, ${alpha(t.palette.primary.main, 0.30)}, ${alpha('#ffffff', 0.05)})`
+            ? `linear-gradient(135deg, ${alpha(t.palette.primary.main, 0.12)}, ${alpha('#ffffff', 0.96)})`
             : 'transparent',
-          boxShadow: selected ? `0 14px 30px ${alpha(t.palette.primary.dark, 0.22)}` : 'none',
+          boxShadow: selected ? `0 12px 24px ${alpha(t.palette.primary.main, 0.12)}` : 'none',
           '& .MuiListItemIcon-root': {
             minWidth: 36,
-            color: selected ? '#fff' : 'rgba(255,255,255,0.56)',
+            color: selected ? t.palette.primary.main : alpha(t.palette.text.primary, 0.62),
           },
           '& .MuiListItemText-primary': {
             fontSize: 14,
@@ -106,7 +116,7 @@ export function AppLayout() {
             letterSpacing: -0.1,
           },
           '&:hover': {
-            backgroundColor: selected ? undefined : 'rgba(255,255,255,0.05)',
+            backgroundColor: selected ? undefined : alpha(t.palette.primary.main, 0.05),
           },
         })}
       >
@@ -117,8 +127,8 @@ export function AppLayout() {
   }
 
   const drawer = (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-      <Toolbar sx={{ px: 1.5, py: 1.25, minHeight: '72px !important', flexShrink: 0 }}>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Toolbar sx={{ px: 1.5, py: 1.25, minHeight: '72px !important' }}>
         <Stack direction="row" spacing={1.2} alignItems="center" sx={{ minWidth: 0 }}>
           <Box
             sx={(t) => ({
@@ -127,35 +137,34 @@ export function AppLayout() {
               borderRadius: 3.2,
               display: 'grid',
               placeItems: 'center',
-              flexShrink: 0,
               background:
-                `radial-gradient(circle at 28% 28%, ${alpha(t.palette.primary.light, 0.55)}, transparent 42%),` +
-                `linear-gradient(135deg, ${alpha('#131a2a', 0.98)}, ${alpha('#0b0f19', 1)})`,
-              border: `1px solid ${alpha(t.palette.primary.light, 0.18)}`,
-              boxShadow: `0 14px 28px ${alpha('#000', 0.32)}`,
+                `radial-gradient(circle at 28% 28%, ${alpha(t.palette.primary.light, 0.4)}, transparent 42%),` +
+                `linear-gradient(135deg, ${alpha('#ffffff', 0.98)}, ${alpha('#eef4ff', 1)})`,
+              border: `1px solid ${alpha(t.palette.primary.light, 0.2)}`,
+              boxShadow: `0 14px 28px ${alpha(t.palette.primary.main, 0.14)}`,
             })}
           >
-            <AutoGraphIcon sx={{ fontSize: 20, color: 'primary.light' }} />
+            <AutoGraphIcon sx={{ fontSize: 20, color: 'primary.main' }} />
           </Box>
-          <Box sx={{ minWidth: 0, overflow: 'hidden' }}>
+          <Box sx={{ minWidth: 0 }}>
             <Typography variant="subtitle2" noWrap fontWeight={900} sx={{ letterSpacing: -0.35 }}>
               SV Integrated Farms
             </Typography>
-            <Typography variant="caption" noWrap sx={{ color: 'rgba(255,255,255,0.55)' }}>
+            <Typography variant="caption" noWrap sx={{ color: 'text.secondary' }}>
               Farm business suite
             </Typography>
           </Box>
         </Stack>
       </Toolbar>
 
-      <Box sx={{ px: 1.25, pb: 1.25, flex: 1, minHeight: 0, overflowY: 'auto' }}>
+      <Box sx={{ px: 1.25, pb: 1.5, flex: 1, overflowY: 'auto' }}>
         <Typography
           variant="caption"
           sx={{
             px: 1,
             mb: 1,
             display: 'block',
-            color: 'rgba(255,255,255,0.42)',
+            color: 'text.secondary',
             fontWeight: 900,
             letterSpacing: 1.1,
             textTransform: 'uppercase',
@@ -163,44 +172,50 @@ export function AppLayout() {
         >
           Main
         </Typography>
-        <List disablePadding>{items.filter((item) => item.section === 'main').map(renderNavItem)}</List>
+        <List disablePadding>{visibleItems.filter((item) => item.section === 'main').map(renderNavItem)}</List>
 
-        <Divider sx={{ my: 1.25, borderColor: 'rgba(255,255,255,0.08)' }} />
+        {visibleItems.some((item) => item.section === 'management') ? (
+          <>
+            <Divider sx={{ my: 1.25, borderColor: 'rgba(15,23,42,0.08)' }} />
 
-        <Typography
-          variant="caption"
-          sx={{
-            px: 1,
-            mb: 1,
-            display: 'block',
-            color: 'rgba(255,255,255,0.42)',
-            fontWeight: 900,
-            letterSpacing: 1.1,
-            textTransform: 'uppercase',
-          }}
-        >
-          Management
-        </Typography>
-        <List disablePadding>{items.filter((item) => item.section === 'management').map(renderNavItem)}</List>
+            <Typography
+              variant="caption"
+              sx={{
+                px: 1,
+                mb: 1,
+                display: 'block',
+                color: 'text.secondary',
+                fontWeight: 900,
+                letterSpacing: 1.1,
+                textTransform: 'uppercase',
+              }}
+            >
+              Management
+            </Typography>
+            <List disablePadding>{visibleItems.filter((item) => item.section === 'management').map(renderNavItem)}</List>
+          </>
+        ) : null}
       </Box>
 
-      <Box sx={{ p: 1.25, pt: 0, flexShrink: 0 }}>
+      <Box sx={{ p: 1.25, pt: 0 }}>
         <Box
           sx={{
-            border: '1px solid rgba(255,255,255,0.08)',
+            border: '1px solid rgba(15,23,42,0.08)',
             borderRadius: 3.2,
             p: 1,
-            background: 'linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02))',
+            background: 'linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,250,252,0.98))',
           }}
         >
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1, minWidth: 0 }}>
-            <Avatar sx={{ width: 34, height: 34, bgcolor: 'primary.main', fontWeight: 900, flexShrink: 0 }}>O</Avatar>
-            <Box sx={{ minWidth: 0, overflow: 'hidden' }}>
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+            <Avatar sx={{ width: 34, height: 34, bgcolor: 'primary.main', fontWeight: 900 }}>
+              {(currentUser?.username?.[0] ?? 'O').toUpperCase()}
+            </Avatar>
+            <Box sx={{ minWidth: 0 }}>
               <Typography variant="body2" fontWeight={800} noWrap>
-                Operator
+                {currentUser?.username ?? 'Operator'}
               </Typography>
-              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.55)', display: 'block' }} noWrap>
-                Active session
+              <Typography variant="caption" sx={{ color: 'text.secondary' }} noWrap>
+                {role === 'admin' ? 'Admin access' : 'Salesman access'}
               </Typography>
             </Box>
           </Stack>
@@ -215,9 +230,9 @@ export function AppLayout() {
                 minHeight: 42,
                 borderRadius: 2.6,
                 px: 1,
-                color: 'rgba(255,255,255,0.82)',
-                '& .MuiListItemIcon-root': { minWidth: 34, color: 'rgba(255,255,255,0.62)' },
-                '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' },
+                color: 'text.primary',
+                '& .MuiListItemIcon-root': { minWidth: 34, color: 'text.secondary' },
+                '&:hover': { backgroundColor: 'rgba(37,99,235,0.05)' },
               }}
             >
               <ListItemIcon>
@@ -225,7 +240,7 @@ export function AppLayout() {
               </ListItemIcon>
               <ListItemText
                 primary="Logout"
-                primaryTypographyProps={{ fontWeight: 800, fontSize: 14, noWrap: true }}
+                primaryTypographyProps={{ fontWeight: 800, fontSize: 14 }}
               />
             </ListItemButton>
           </List>
@@ -235,65 +250,53 @@ export function AppLayout() {
   );
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#070b12' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
       <AppBar
         position="fixed"
         elevation={0}
         sx={(t) => ({
           zIndex: (tt) => tt.zIndex.drawer + 1,
-          background: alpha('#09101a', 0.78),
+          background: alpha('#ffffff', 0.9),
           color: t.palette.text.primary,
           backdropFilter: 'blur(18px)',
-          borderBottom: `1px solid ${alpha(t.palette.divider, 0.55)}`,
-          boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+          borderBottom: `1px solid ${alpha(t.palette.divider, 0.8)}`,
+          boxShadow: '0 8px 24px rgba(15,23,42,0.06)',
         })}
       >
-        <Toolbar
-          sx={{
-            minHeight: { xs: '64px !important', md: '72px !important' },
-            px: { xs: 1.25, sm: 2.2 },
-            gap: 1.2,
-          }}
-        >
+        <Toolbar sx={{ minHeight: '72px !important', px: { xs: 1.25, sm: 2.2 }, gap: 1.2 }}>
           <IconButton
             color="inherit"
             edge="start"
             onClick={() => setMobileOpen((v) => !v)}
             sx={{
               display: { sm: 'none' },
-              border: '1px solid rgba(255,255,255,0.08)',
-              bgcolor: 'rgba(255,255,255,0.03)',
-              flexShrink: 0,
+              border: '1px solid rgba(15,23,42,0.08)',
+              bgcolor: 'rgba(37,99,235,0.04)',
             }}
           >
             <MenuIcon />
           </IconButton>
 
-          <Box sx={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
+          <Box sx={{ minWidth: 0, flex: 1 }}>
             <Typography variant="h6" noWrap fontWeight={900} sx={{ letterSpacing: -0.5, lineHeight: 1.1 }}>
               {currentPage.title}
             </Typography>
-            <Typography
-              variant="body2"
-              noWrap
-              sx={{ color: 'text.secondary', mt: 0.35, display: { xs: 'none', sm: 'block' } }}
-            >
+            <Typography variant="body2" noWrap sx={{ color: 'text.secondary', mt: 0.35 }}>
               {currentPage.subtitle}
             </Typography>
           </Box>
 
           <Box
             sx={(t) => ({
-              display: { xs: 'none', lg: 'flex' },
+              display: { xs: 'none', md: 'flex' },
               alignItems: 'center',
               gap: 1,
               px: 1.5,
               py: 0.7,
-              width: 280,
-              flexShrink: 0,
+              width: 320,
               borderRadius: 999,
-              border: `1px solid ${alpha(t.palette.divider, 0.75)}`,
-              background: `linear-gradient(180deg, ${alpha('#111827', 0.92)}, ${alpha('#0d1522', 0.92)})`,
+              border: `1px solid ${alpha(t.palette.divider, 0.9)}`,
+              background: `linear-gradient(180deg, ${alpha('#ffffff', 0.98)}, ${alpha('#f8fafc', 1)})`,
             })}
           >
             <SearchIcon fontSize="small" sx={{ color: 'text.secondary' }} />
@@ -303,13 +306,13 @@ export function AppLayout() {
             />
           </Box>
 
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
+          <Stack direction="row" spacing={1} alignItems="center">
             <Tooltip title="Settings">
               <IconButton
                 size="small"
                 sx={{
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  bgcolor: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(15,23,42,0.08)',
+                  bgcolor: 'rgba(37,99,235,0.04)',
                 }}
               >
                 <SettingsOutlinedIcon fontSize="small" />
@@ -319,8 +322,8 @@ export function AppLayout() {
               <IconButton
                 size="small"
                 sx={{
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  bgcolor: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(15,23,42,0.08)',
+                  bgcolor: 'rgba(37,99,235,0.04)',
                 }}
               >
                 <Badge variant="dot" color="secondary">
@@ -334,10 +337,10 @@ export function AppLayout() {
                 height: 36,
                 bgcolor: 'primary.main',
                 fontWeight: 900,
-                boxShadow: '0 8px 20px rgba(99,102,241,0.3)',
+                boxShadow: '0 8px 20px rgba(37,99,235,0.2)',
               }}
             >
-              O
+              {(currentUser?.username?.[0] ?? 'O').toUpperCase()}
             </Avatar>
           </Stack>
         </Toolbar>
@@ -354,8 +357,8 @@ export function AppLayout() {
             '& .MuiDrawer-paper': {
               boxSizing: 'border-box',
               width: drawerWidth,
-              background: 'linear-gradient(180deg, #0b0f19, #070a12)',
-              borderRight: '1px solid rgba(255,255,255,0.08)',
+              background: 'linear-gradient(180deg, #ffffff, #f8fbff)',
+              borderRight: '1px solid rgba(15,23,42,0.08)',
             },
           }}
         >
@@ -369,8 +372,8 @@ export function AppLayout() {
             '& .MuiDrawer-paper': {
               boxSizing: 'border-box',
               width: drawerWidth,
-              background: 'linear-gradient(180deg, #0b0f19, #070a12)',
-              borderRight: '1px solid rgba(255,255,255,0.08)',
+              background: 'linear-gradient(180deg, #ffffff, #f8fbff)',
+              borderRight: '1px solid rgba(15,23,42,0.08)',
             },
           }}
         >
@@ -382,13 +385,12 @@ export function AppLayout() {
         component="main"
         sx={{
           flexGrow: 1,
-          minWidth: 0,
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           px: { xs: 1.5, sm: 2.5, md: 3 },
           py: 2.5,
         }}
       >
-        <Toolbar sx={{ minHeight: { xs: '64px !important', md: '72px !important' } }} />
+        <Toolbar sx={{ minHeight: '72px !important' }} />
         <Outlet />
       </Box>
     </Box>

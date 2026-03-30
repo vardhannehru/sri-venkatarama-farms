@@ -27,11 +27,46 @@ export default function App() {
         <Route index element={<DashboardPage />} />
         <Route path="billing" element={<BillingPage />} />
         <Route path="invoices" element={<InvoicesPage />} />
-        <Route path="products" element={<ProductsPage />} />
-        <Route path="customers" element={<CustomersPage />} />
-        <Route path="expenses" element={<ExpensesPage />} />
-        <Route path="reports" element={<ReportsPage />} />
-        <Route path="settings" element={<SettingsPage />} />
+        <Route
+          path="products"
+          element={
+            <RequireAuth allowedRoles={['admin']}>
+              <ProductsPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="customers"
+          element={
+            <RequireAuth allowedRoles={['admin']}>
+              <CustomersPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="expenses"
+          element={
+            <RequireAuth allowedRoles={['admin']}>
+              <ExpensesPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="reports"
+          element={
+            <RequireAuth allowedRoles={['admin']}>
+              <ReportsPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="settings"
+          element={
+            <RequireAuth allowedRoles={['admin']}>
+              <SettingsPage />
+            </RequireAuth>
+          }
+        />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

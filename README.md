@@ -1,73 +1,89 @@
-# React + TypeScript + Vite
+# Sri Venkatarama Integrated Farms
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Quail farm management app with:
 
-Currently, two official plugins are available:
+- product management
+- billing / POS
+- daily bird targets
+- login settings
+- admin and salesman access
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Local development
 
-## React Compiler
+Install dependencies:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Start the backend:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run server
 ```
+
+Start the frontend in another terminal:
+
+```bash
+npm run dev
+```
+
+## Production run
+
+Build the frontend:
+
+```bash
+npm run build
+```
+
+Start the production server:
+
+```bash
+npm run start
+```
+
+The backend serves the built frontend from `dist` and exposes the API from the same server.
+
+## Online deployment
+
+This project is ready for single-service deployment.
+
+### Render
+
+This repo includes `render.yaml`.
+
+Steps:
+
+1. Push the project to GitHub
+2. Create a new Render Web Service from the repo
+3. Render will also create a PostgreSQL database from the blueprint
+4. Render will use:
+   - build: `npm ci && npm run build`
+   - start: `npm run start`
+   - `DATABASE_URL` from the Render Postgres service
+5. After deploy, open the app URL from Render
+
+The server now behaves like this:
+
+- local without `DATABASE_URL`: uses `backend/data/db.json`
+- online with `DATABASE_URL`: uses PostgreSQL for saved data
+
+### Docker
+
+Build image:
+
+```bash
+docker build -t shop-app .
+```
+
+Run container:
+
+```bash
+docker run -p 4000:4000 shop-app
+```
+
+## Important note about data
+
+For real online saving, set `DATABASE_URL` and the app will use PostgreSQL automatically.
+
+If `DATABASE_URL` is missing, the app falls back to `backend/data/db.json` for local development.

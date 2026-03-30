@@ -11,7 +11,7 @@ import {
   Typography,
   alpha,
 } from '@mui/material';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { CartItem, Product } from '../types';
 import { mockProductsDb } from '../lib/mockDb';
 import { dailyTargetDb } from '../lib/dailyTargetDb';
@@ -25,11 +25,19 @@ function money(n: number) {
 }
 
 export function BillingPage() {
-  const [products] = useState<Product[]>(() => mockProductsDb.list());
+  const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [discount, setDiscount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Cash');
   const [received, setReceived] = useState(0);
+  const [dailyTarget, setDailyTarget] = useState(0);
+  const [todaySoldBirds, setTodaySoldBirds] = useState(0);
+
+  useEffect(() => {
+    mockProductsDb.list().then(setProducts).catch(() => setProducts([]));
+    dailyTargetDb.getTarget().then((target) => setDailyTarget(target.quantity)).catch(() => setDailyTarget(0));
+    dailyTargetDb.getTodayQuantity().then(setTodaySoldBirds).catch(() => setTodaySoldBirds(0));
+  }, []);
 
   const categories = useMemo(
     () => Array.from(new Set(products.map((product) => product.category).filter(Boolean))) as string[],
@@ -37,6 +45,12 @@ export function BillingPage() {
   );
 
   const [selectedCategory, setSelectedCategory] = useState<string>(categories[0] ?? '');
+
+  useEffect(() => {
+    if (!selectedCategory && categories.length) {
+      setSelectedCategory(categories[0]);
+    }
+  }, [categories, selectedCategory]);
 
   const visibleProducts = useMemo(() => {
     if (!selectedCategory) return products;
@@ -46,9 +60,7 @@ export function BillingPage() {
   const subtotal = useMemo(() => cart.reduce((a, x) => a + x.lineTotal, 0), [cart]);
   const total = Math.max(0, subtotal - discount);
   const balance = received - total;
-  const dailyTarget = dailyTargetDb.getTarget().amount;
-  const todaySales = dailyTargetDb.getTodaySales();
-  const remainingTarget = Math.max(0, dailyTarget - todaySales);
+  const remainingTarget = Math.max(0, dailyTarget - todaySoldBirds);
 
   function addToCart(p: Product) {
     setCart((prev) => {
@@ -85,7 +97,7 @@ export function BillingPage() {
         {dailyTarget > 0 ? (
           <Typography variant="body2" sx={{ mb: 1.5, color: remainingTarget > 0 ? 'warning.light' : 'success.light' }}>
             {remainingTarget > 0
-              ? `Daily target warning: ₹ ${money(remainingTarget)} more needed to complete today's target.`
+              ? `Daily target warning: ${remainingTarget} more quail birds needed to complete today's target.`
               : 'Daily target completed for today.'}
           </Typography>
         ) : null}
@@ -134,13 +146,13 @@ export function BillingPage() {
                           border:
                             selectedCategory === category
                               ? `1px solid ${alpha(theme.palette.primary.main, 0.6)}`
-                              : '1px solid rgba(255,255,255,0.08)',
+                              : '1px solid rgba(15,23,42,0.08)',
                           background:
                             selectedCategory === category
-                              ? `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.24)}, rgba(255,255,255,0.04))`
-                              : 'rgba(255,255,255,0.02)',
+                              ? `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.10)}, rgba(255,255,255,0.98))`
+                              : 'rgba(255,255,255,0.98)',
                           boxShadow:
-                            selectedCategory === category ? `0 18px 40px ${alpha(theme.palette.primary.dark, 0.25)}` : 'none',
+                            selectedCategory === category ? `0 14px 30px ${alpha(theme.palette.primary.main, 0.10)}` : 'none',
                           transition: 'all 160ms ease',
                           '&:hover': {
                             transform: 'translateY(-2px)',
@@ -167,7 +179,7 @@ export function BillingPage() {
                     <Chip
                       label={`${visibleProducts.length} item${visibleProducts.length === 1 ? '' : 's'}`}
                       size="small"
-                      sx={{ bgcolor: 'rgba(255,255,255,0.05)' }}
+                      sx={{ bgcolor: 'rgba(15,23,42,0.05)' }}
                     />
                   </Stack>
 
@@ -186,14 +198,14 @@ export function BillingPage() {
                           p: 1.6,
                           borderRadius: 3,
                           cursor: 'pointer',
-                          border: '1px solid rgba(255,255,255,0.08)',
+                          border: '1px solid rgba(15,23,42,0.08)',
                           background:
-                            'linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02))',
+                            'linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,1))',
                           transition: 'all 160ms ease',
                           '&:hover': {
                             transform: 'translateY(-2px)',
                             borderColor: alpha(theme.palette.secondary.main, 0.45),
-                            boxShadow: `0 16px 34px ${alpha(theme.palette.common.black, 0.22)}`,
+                            boxShadow: `0 16px 34px ${alpha(theme.palette.primary.main, 0.08)}`,
                           },
                         })}
                       >
@@ -325,8 +337,10 @@ export function BillingPage() {
               variant="contained"
               size="large"
               disabled={cart.length === 0}
-              onClick={() => {
-                dailyTargetDb.addSale(total);
+              onClick={async () => {
+                const totalBirds = cart.reduce((sum, item) => sum + item.qty, 0);
+                const updated = await dailyTargetDb.addSale(totalBirds);
+                setTodaySoldBirds(updated);
                 alert('Sale completed successfully. Daily target progress updated.');
                 setCart([]);
                 setDiscount(0);

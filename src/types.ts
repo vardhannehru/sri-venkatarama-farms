@@ -1,8 +1,6 @@
 export type Product = {
   id: string;
   name: string;
-  sku?: string;
-  barcode?: string;
   category?: string;
   costPrice: number;
   sellPrice: number;
@@ -15,4 +13,12 @@ export type CartItem = {
   qty: number;
   unitPrice: number;
   lineTotal: number;
+};
+
+export type UserRole = 'admin' | 'salesman';
+
+export type SessionUser = {
+  id: string;
+  username: string;
+  role: UserRole;
 };

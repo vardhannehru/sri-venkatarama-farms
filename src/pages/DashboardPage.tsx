@@ -1,36 +1,12 @@
 import { alpha, Box, Button, Card, CardContent, Chip, Divider, Stack, TextField, Typography } from '@mui/material';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Product } from '../types';
+import { hasRole } from '../lib/auth';
 import { mockProductsDb } from '../lib/mockDb';
-
-const DAILY_TARGET_KEY = 'shopapp.dailyTarget';
+import { dailyTargetDb } from '../lib/dailyTargetDb';
 
 function money(n: number) {
   return new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }).format(n);
-}
-
-function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-IN', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-}
-
-function daysUntil(date?: string) {
-  if (!date) return null;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const expiry = new Date(date);
-  expiry.setHours(0, 0, 0, 0);
-  return Math.ceil((expiry.getTime() - today.getTime()) / 86_400_000);
-}
-
-function readDailyTarget() {
-  const raw = localStorage.getItem(DAILY_TARGET_KEY);
-  if (!raw) return 0;
-  const parsed = Number(raw);
-  return Number.isFinite(parsed) ? parsed : 0;
 }
 
 function SectionHeader({
@@ -83,12 +59,9 @@ function KpiCard({
       sx={{
         position: 'relative',
         overflow: 'hidden',
-        background:
-          highlight
-            ? 'linear-gradient(145deg, rgba(76,29,149,0.95) 0%, rgba(30,41,59,0.98) 55%, rgba(11,15,25,1) 100%)'
-            : 'linear-gradient(180deg, rgba(15,23,42,0.92) 0%, rgba(11,15,25,0.96) 100%)',
-        border: highlight ? '1px solid rgba(167,139,250,0.5)' : undefined,
-        boxShadow: highlight ? '0 24px 60px rgba(76,29,149,0.35)' : undefined,
+        background: 'linear-gradient(180deg, rgba(255,255,255,0.98), rgba(250,251,253,1))',
+        border: highlight ? '1px solid rgba(37,99,235,0.18)' : '1px solid rgba(15,23,42,0.06)',
+        boxShadow: highlight ? '0 18px 36px rgba(37,99,235,0.10)' : '0 12px 28px rgba(15,23,42,0.05)',
         transform: highlight ? 'translateY(-2px)' : 'none',
       }}
     >
@@ -98,8 +71,8 @@ function KpiCard({
           inset: 0,
           background:
             highlight
-              ? 'radial-gradient(circle at top right, rgba(196,181,253,0.38), transparent 34%), radial-gradient(circle at bottom left, rgba(34,197,94,0.16), transparent 36%)'
-              : 'radial-gradient(circle at top right, rgba(124,58,237,0.24), transparent 38%), radial-gradient(circle at bottom left, rgba(34,197,94,0.12), transparent 35%)',
+              ? 'radial-gradient(circle at top right, rgba(37,99,235,0.12), transparent 34%), radial-gradient(circle at bottom left, rgba(22,163,74,0.08), transparent 36%)'
+              : 'radial-gradient(circle at top right, rgba(37,99,235,0.05), transparent 38%), radial-gradient(circle at bottom left, rgba(22,163,74,0.04), transparent 35%)',
           pointerEvents: 'none',
         }}
       />
@@ -109,20 +82,16 @@ function KpiCard({
           size="small"
           sx={{
             mb: 1.5,
-            bgcolor: highlight ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)',
-            color: highlight ? 'rgba(255,255,255,0.92)' : 'text.secondary',
-            border: highlight ? '1px solid rgba(255,255,255,0.16)' : '1px solid rgba(255,255,255,0.08)',
+            bgcolor: highlight ? 'rgba(37,99,235,0.08)' : 'rgba(15,23,42,0.04)',
+            color: highlight ? 'primary.main' : 'text.secondary',
+            border: highlight ? '1px solid rgba(37,99,235,0.12)' : '1px solid rgba(15,23,42,0.06)',
           }}
         />
-        <Typography variant="h4" fontWeight={950} sx={{ color: highlight ? '#ffffff' : 'inherit' }}>
+        <Typography variant="h4" fontWeight={950} sx={{ color: 'text.primary' }}>
           {value}
         </Typography>
         {sub ? (
-          <Typography
-            variant="body2"
-            color={highlight ? 'rgba(255,255,255,0.74)' : 'text.secondary'}
-            sx={{ mt: 0.75 }}
-          >
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
             {sub}
           </Typography>
         ) : null}
@@ -162,35 +131,45 @@ function EmptyPanel({
 }
 
 export function DashboardPage() {
-  const products = mockProductsDb.list();
-  const [dailyTarget, setDailyTarget] = useState<number>(() => readDailyTarget());
-  const [targetInput, setTargetInput] = useState<string>(() => String(readDailyTarget() || ''));
+  const canManageTarget = hasRole('admin');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [dailyTarget, setDailyTarget] = useState<number>(0);
+  const [todaySoldBirds, setTodaySoldBirds] = useState<number>(0);
+  const [targetInput, setTargetInput] = useState<string>('');
 
   useEffect(() => {
-    localStorage.setItem(DAILY_TARGET_KEY, String(dailyTarget));
-  }, [dailyTarget]);
+    mockProductsDb.list().then(setProducts).catch(() => setProducts([]));
+    dailyTargetDb
+      .getTarget()
+      .then((target) => {
+        setDailyTarget(target.quantity);
+        setTargetInput(target.quantity ? String(target.quantity) : '');
+      })
+      .catch(() => {
+        setDailyTarget(0);
+        setTargetInput('');
+      });
+    dailyTargetDb.getTodayQuantity().then(setTodaySoldBirds).catch(() => setTodaySoldBirds(0));
+  }, []);
 
-  const expiringSoon = useMemo(
-    () =>
-      products
-        .filter((product) => {
-          const days = daysUntil(product.expiryDate);
-          return days !== null && days <= 3;
-        })
-        .sort((a, b) => (daysUntil(a.expiryDate) ?? 999) - (daysUntil(b.expiryDate) ?? 999)),
-    [products]
-  );
-
-  const todaySales = 0;
   const inventoryValue = products.reduce((sum, product) => sum + product.stock * product.sellPrice, 0);
-  const targetRemaining = Math.max(dailyTarget - todaySales, 0);
-  const targetPercent = dailyTarget > 0 ? Math.min((todaySales / dailyTarget) * 100, 100) : 0;
-  const targetCompleted = dailyTarget > 0 && todaySales >= dailyTarget;
+  const hasProducts = products.length > 0;
+  const targetRemaining = Math.max(dailyTarget - todaySoldBirds, 0);
+  const targetPercent = dailyTarget > 0 ? Math.min((todaySoldBirds / dailyTarget) * 100, 100) : 0;
+  const targetCompleted = dailyTarget > 0 && todaySoldBirds >= dailyTarget;
 
   function saveTarget() {
+    if (!hasProducts) return;
     const next = Math.max(0, Number(targetInput) || 0);
     setDailyTarget(next);
+    void dailyTargetDb.setTarget(next);
     setTargetInput(next ? String(next) : '');
+  }
+
+  function clearTarget() {
+    setDailyTarget(0);
+    setTargetInput('');
+    void dailyTargetDb.setTarget(0);
   }
 
   return (
@@ -202,21 +181,23 @@ export function DashboardPage() {
           gap: 2,
         }}
       >
-        <KpiCard label="Today Sales" value={`₹ ${money(todaySales)}`} sub="No sales recorded yet" highlight />
-        <KpiCard label="Daily Target" value={dailyTarget ? `₹ ${money(dailyTarget)}` : 'Not set'} sub={dailyTarget ? `${targetPercent.toFixed(0)}% completed` : 'Add today target'} />
+        <KpiCard label="Today Birds Sold" value={`${todaySoldBirds}`} sub="Birds billed today" highlight />
         <KpiCard
-          label="Expiry Alerts"
-          value={`${expiringSoon.length}`}
-          sub={expiringSoon.length ? 'Sell these items first' : 'No urgent expiry'}
+          label="Daily Bird Target"
+          value={dailyTarget ? `${dailyTarget}` : 'Not set'}
+          sub={dailyTarget ? `${targetPercent.toFixed(0)}% completed` : 'Add today target'}
+        />
+        <KpiCard
+          label="Products"
+          value={`${products.length}`}
+          sub={products.length ? 'Active inventory items' : 'Add your first product'}
         />
         <KpiCard label="Inventory Value" value={`₹ ${money(inventoryValue)}`} sub="Based on current sell price" />
       </Box>
 
       <Card
         sx={{
-          border: targetCompleted
-            ? '1px solid rgba(34,197,94,0.34)'
-            : '1px solid rgba(245,158,11,0.34)',
+          border: targetCompleted ? '1px solid rgba(34,197,94,0.34)' : '1px solid rgba(245,158,11,0.34)',
           background: targetCompleted
             ? 'linear-gradient(135deg, rgba(34,197,94,0.16), rgba(255,255,255,0.03))'
             : 'linear-gradient(135deg, rgba(245,158,11,0.16), rgba(255,255,255,0.03))',
@@ -229,31 +210,50 @@ export function DashboardPage() {
             caption={
               dailyTarget
                 ? targetCompleted
-                  ? 'Great work. Today sales have already reached the target.'
-                  : `You still need ₹ ${money(targetRemaining)} to complete today target.`
-                : 'Set a daily target amount so the dashboard can warn you when sales are behind.'
+                  ? 'Great work. Today bird sales have already reached the target.'
+                  : `You still need ${targetRemaining} more quail birds to complete today target.`
+                : 'Set a daily target in bird count so the dashboard can warn you when sales are behind.'
             }
           />
 
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ md: 'center' }}>
             <TextField
-              label="Daily target amount"
+              label="Daily target birds"
               type="number"
               value={targetInput}
               onChange={(e) => setTargetInput(e.target.value)}
+              disabled={!canManageTarget || !hasProducts}
               sx={{ width: { xs: '100%', md: 220 } }}
+              helperText={!hasProducts ? 'Add products first to set a target.' : ' '}
             />
-            <Button variant="contained" onClick={saveTarget}>
+            <Button variant="contained" onClick={saveTarget} disabled={!canManageTarget || !hasProducts}>
               Save target
+            </Button>
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={clearTarget}
+              disabled={!canManageTarget || dailyTarget === 0}
+            >
+              Remove target
             </Button>
             {dailyTarget ? (
               <Chip
-                label={targetCompleted ? 'Target completed' : `Remaining ₹ ${money(targetRemaining)}`}
+                label={targetCompleted ? 'Target completed' : `Remaining ${targetRemaining} birds`}
                 color={targetCompleted ? 'success' : 'warning'}
                 size="small"
               />
             ) : null}
           </Stack>
+          {!canManageTarget ? (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1.25 }}>
+              Only admin can change the daily bird target. Salesman can view progress here.
+            </Typography>
+          ) : !hasProducts ? (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1.25 }}>
+              Add at least one product before setting a daily target.
+            </Typography>
+          ) : null}
 
           {dailyTarget ? (
             <Box
@@ -261,14 +261,14 @@ export function DashboardPage() {
                 mt: 2,
                 height: 12,
                 borderRadius: 999,
-                bgcolor: 'rgba(255,255,255,0.08)',
+                bgcolor: 'rgba(15,23,42,0.08)',
                 overflow: 'hidden',
               }}
             >
               <Box
                 sx={{
                   width: `${targetPercent}%`,
-                  minWidth: todaySales > 0 ? 8 : 0,
+                  minWidth: todaySoldBirds > 0 ? 8 : 0,
                   height: '100%',
                   borderRadius: 999,
                   background: targetCompleted
@@ -280,59 +280,6 @@ export function DashboardPage() {
           ) : null}
         </CardContent>
       </Card>
-
-      {expiringSoon.length ? (
-        <Card
-          sx={{
-            border: '1px solid rgba(245,158,11,0.34)',
-            background:
-              'linear-gradient(135deg, rgba(245,158,11,0.16), rgba(255,255,255,0.03))',
-          }}
-        >
-          <CardContent>
-            <SectionHeader
-              eyebrow="Expiry Warning"
-              title="Sell these before they expire"
-              caption="These items are closest to expiry and should move first."
-            />
-            <Stack spacing={1.2}>
-              {expiringSoon.map((product: Product) => {
-                const days = daysUntil(product.expiryDate);
-                return (
-                  <Box
-                    key={product.id}
-                    sx={{
-                      display: 'grid',
-                      gridTemplateColumns: { xs: '1fr', md: '1fr auto auto' },
-                      gap: 1,
-                      alignItems: 'center',
-                      p: 1.3,
-                      borderRadius: 3,
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      bgcolor: 'rgba(17,24,39,0.38)',
-                    }}
-                  >
-                    <Box>
-                      <Typography fontWeight={900}>
-                        {product.name} - {product.category}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Expiry: {product.expiryDate ? fmtDate(product.expiryDate) : '-'}
-                      </Typography>
-                    </Box>
-                    <Typography fontWeight={800}>Stock {product.stock}</Typography>
-                    <Chip
-                      label={days !== null && days >= 0 ? `${days} day${days === 1 ? '' : 's'} left` : 'Expired'}
-                      color={days !== null && days >= 0 ? 'warning' : 'error'}
-                      size="small"
-                    />
-                  </Box>
-                );
-              })}
-            </Stack>
-          </CardContent>
-        </Card>
-      ) : null}
 
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', xl: '1.8fr 1fr' }, gap: 2 }}>
         <EmptyPanel
@@ -359,17 +306,17 @@ export function DashboardPage() {
       {!products.length ? (
         <Card
           sx={{
-            border: '1px solid rgba(255,255,255,0.08)',
-            background: `linear-gradient(180deg, ${alpha('#ffffff', 0.04)}, ${alpha('#ffffff', 0.02)})`,
+            border: '1px solid rgba(15,23,42,0.08)',
+            background: `linear-gradient(180deg, ${alpha('#ffffff', 0.98)}, ${alpha('#f8fafc', 1)})`,
           }}
         >
           <CardContent>
             <SectionHeader
               eyebrow="Setup"
               title="Add your first products"
-              caption="Go to Products and enter your real inventory to activate warnings, billing, and dashboard totals."
+              caption="Go to Products and enter your real inventory to activate billing and dashboard totals."
             />
-            <Divider sx={{ borderColor: 'rgba(255,255,255,0.08)' }} />
+            <Divider sx={{ borderColor: 'rgba(15,23,42,0.08)' }} />
           </CardContent>
         </Card>
       ) : null}

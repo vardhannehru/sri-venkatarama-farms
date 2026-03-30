@@ -11,18 +11,18 @@ import App from './App';
 
 const theme = createTheme({
   palette: {
-    mode: 'dark',
-    primary: { main: '#7c3aed' },
-    secondary: { main: '#22c55e' },
+    mode: 'light',
+    primary: { main: '#2563eb' },
+    secondary: { main: '#16a34a' },
     background: {
-      default: '#0b0f19',
-      paper: '#101828',
+      default: '#f5f7fb',
+      paper: '#ffffff',
     },
     text: {
-      primary: '#eef2ff',
-      secondary: '#98a2b3',
+      primary: '#152033',
+      secondary: '#5f6f86',
     },
-    divider: 'rgba(255,255,255,0.10)',
+    divider: 'rgba(15,23,42,0.08)',
   },
   shape: { borderRadius: 16 },
   typography: {
@@ -38,7 +38,7 @@ const theme = createTheme({
       styleOverrides: {
         body: {
           backgroundImage:
-            'radial-gradient(1200px 600px at 20% -10%, rgba(124,58,237,0.22), transparent 55%), radial-gradient(900px 520px at 90% 0%, rgba(34,197,94,0.10), transparent 60%)',
+            'radial-gradient(1200px 600px at 20% -10%, rgba(37,99,235,0.12), transparent 55%), radial-gradient(900px 520px at 90% 0%, rgba(22,163,74,0.08), transparent 60%)',
           backgroundAttachment: 'fixed',
         },
       },
@@ -47,10 +47,10 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 18,
-          border: '1px solid rgba(255,255,255,0.10)',
-          boxShadow: '0 16px 50px rgba(0,0,0,0.35)',
+          border: '1px solid rgba(15,23,42,0.08)',
+          boxShadow: '0 14px 36px rgba(15,23,42,0.08)',
           backgroundImage:
-            'linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02))',
+            'linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,250,252,0.98))',
           backdropFilter: 'blur(10px)',
         },
       },

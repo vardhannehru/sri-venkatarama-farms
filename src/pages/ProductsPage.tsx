@@ -15,8 +15,9 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import { DataGrid, type GridColDef } from '@mui/x-data-grid';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Product } from '../types';
+import { hasRole } from '../lib/auth';
 import { mockProductsDb } from '../lib/mockDb';
 
 function uid() {
@@ -38,10 +39,11 @@ function ProductDialog({
 }) {
   const [draft, setDraft] = useState<ProductDraft>(initial);
 
-  // reset when opening
-  if (open && draft !== initial && initial.id && draft.id !== initial.id) {
-    // noop; keep controlled by user after open
-  }
+  useEffect(() => {
+    if (open) {
+      setDraft(initial);
+    }
+  }, [initial, open]);
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
@@ -53,24 +55,11 @@ function ProductDialog({
           onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}
           autoFocus
         />
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-          <TextField
-            label="SKU"
-            value={draft.sku ?? ''}
-            onChange={(e) => setDraft((d) => ({ ...d, sku: e.target.value }))}
-            fullWidth
-          />
-          <TextField
-            label="Barcode"
-            value={draft.barcode ?? ''}
-            onChange={(e) => setDraft((d) => ({ ...d, barcode: e.target.value }))}
-            fullWidth
-          />
-        </Stack>
         <TextField
           label="Category"
           value={draft.category ?? ''}
           onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value }))}
+          fullWidth
         />
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
           <TextField
@@ -105,8 +94,6 @@ function ProductDialog({
             onSave({
               id: draft.id ?? uid(),
               name,
-              sku: draft.sku?.trim() || undefined,
-              barcode: draft.barcode?.trim() || undefined,
               category: draft.category?.trim() || undefined,
               costPrice: Number(draft.costPrice ?? 0),
               sellPrice: Number(draft.sellPrice ?? 0),
@@ -122,26 +109,30 @@ function ProductDialog({
 }
 
 export function ProductsPage() {
-  const [rows, setRows] = useState<Product[]>(() => mockProductsDb.list());
+  const canManageProducts = hasRole('admin');
+  const [rows, setRows] = useState<Product[]>([]);
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
+
+  useEffect(() => {
+    mockProductsDb.list().then(setRows).catch(() => setRows([]));
+  }, []);
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
     if (!s) return rows;
     return rows.filter((p) =>
-      [p.name, p.sku, p.barcode, p.category].filter(Boolean).some((x) => String(x).toLowerCase().includes(s))
+      [p.name, p.category].filter(Boolean).some((x) => String(x).toLowerCase().includes(s))
     );
   }, [q, rows]);
 
   const cols: GridColDef<Product>[] = [
-    { field: 'name', headerName: 'Name', flex: 1, minWidth: 200 },
-    { field: 'sku', headerName: 'SKU', width: 140 },
-    { field: 'barcode', headerName: 'Barcode', width: 160 },
-    { field: 'category', headerName: 'Category', width: 160 },
-    { field: 'stock', headerName: 'Stock', width: 110, type: 'number' },
-    { field: 'sellPrice', headerName: 'Sell', width: 110, type: 'number' },
+    { field: 'name', headerName: 'Name', flex: 1, minWidth: 150 },
+    { field: 'category', headerName: 'Category', width: 150 },
+    { field: 'stock', headerName: 'Stock', width: 90, type: 'number' },
+    { field: 'costPrice', headerName: 'Cost', width: 100, type: 'number' },
+    { field: 'sellPrice', headerName: 'Sell', width: 100, type: 'number' },
     {
       field: 'actions',
       headerName: 'Actions',
@@ -150,25 +141,28 @@ export function ProductsPage() {
       filterable: false,
       renderCell: (params) => (
         <Stack direction="row" spacing={1}>
-          <IconButton
-            size="small"
-            onClick={() => {
-              setEditing(params.row);
-              setOpen(true);
-            }}
-          >
-            <EditIcon fontSize="small" />
-          </IconButton>
-          <IconButton
-            size="small"
-            color="error"
-            onClick={() => {
-              mockProductsDb.remove(params.row.id);
-              setRows(mockProductsDb.list());
-            }}
-          >
-            <DeleteIcon fontSize="small" />
-          </IconButton>
+          {canManageProducts ? (
+            <>
+              <IconButton
+                size="small"
+                onClick={() => {
+                  setEditing(params.row);
+                  setOpen(true);
+                }}
+              >
+                <EditIcon fontSize="small" />
+              </IconButton>
+              <IconButton
+                size="small"
+                color="error"
+                onClick={() => {
+                  mockProductsDb.remove(params.row.id).then(() => mockProductsDb.list().then(setRows));
+                }}
+              >
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </>
+          ) : null}
         </Stack>
       ),
     },
@@ -182,24 +176,21 @@ export function ProductsPage() {
             Products
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Add, edit, delete products and track stock.
+            Manage Kouju Pitta live birds, dressing, eggs, chicks, pricing, and stock levels.
           </Typography>
         </Box>
-        <TextField
-          size="small"
-          label="Search"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
-        <Button
-          variant="contained"
-          onClick={() => {
-            setEditing(null);
-            setOpen(true);
-          }}
-        >
-          Add Product
-        </Button>
+        <TextField size="small" label="Search" value={q} onChange={(e) => setQ(e.target.value)} />
+        {canManageProducts ? (
+          <Button
+            variant="contained"
+            onClick={() => {
+              setEditing(null);
+              setOpen(true);
+            }}
+          >
+            Add Product
+          </Button>
+        ) : null}
       </Stack>
 
       <Card>
@@ -216,20 +207,28 @@ export function ProductsPage() {
         </CardContent>
       </Card>
 
-      <ProductDialog
-        open={open}
-        initial={
-          editing
-            ? { ...editing }
-            : { name: '', sku: '', barcode: '', category: '', costPrice: 0, sellPrice: 0, stock: 0 }
-        }
-        onClose={() => setOpen(false)}
-        onSave={(p) => {
-          mockProductsDb.upsert(p);
-          setRows(mockProductsDb.list());
-          setOpen(false);
-        }}
-      />
+      {canManageProducts ? (
+        <ProductDialog
+          open={open}
+          initial={
+            editing
+              ? { ...editing }
+              : {
+                  name: '',
+                  category: '',
+                  costPrice: 0,
+                  sellPrice: 0,
+                  stock: 0,
+                }
+          }
+          onClose={() => setOpen(false)}
+          onSave={async (p) => {
+            await mockProductsDb.upsert(p);
+            setRows(await mockProductsDb.list());
+            setOpen(false);
+          }}
+        />
+      ) : null}
     </Box>
   );
 }
