@@ -3,15 +3,18 @@ import {
   Button,
   Card,
   CardContent,
+  Chip,
   Divider,
   MenuItem,
   Stack,
   TextField,
   Typography,
+  alpha,
 } from '@mui/material';
 import { useMemo, useState } from 'react';
 import type { CartItem, Product } from '../types';
 import { mockProductsDb } from '../lib/mockDb';
+import { dailyTargetDb } from '../lib/dailyTargetDb';
 
 const paymentMethods = ['Cash', 'UPI', 'Card', 'Mixed'] as const;
 
@@ -23,23 +26,29 @@ function money(n: number) {
 
 export function BillingPage() {
   const [products] = useState<Product[]>(() => mockProductsDb.list());
-  const [q, setQ] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [discount, setDiscount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Cash');
   const [received, setReceived] = useState(0);
 
-  const matches = useMemo(() => {
-    const s = q.trim().toLowerCase();
-    if (!s) return [];
-    return products
-      .filter((p) => [p.name, p.sku, p.barcode].filter(Boolean).some((x) => String(x).toLowerCase().includes(s)))
-      .slice(0, 8);
-  }, [q, products]);
+  const categories = useMemo(
+    () => Array.from(new Set(products.map((product) => product.category).filter(Boolean))) as string[],
+    [products]
+  );
+
+  const [selectedCategory, setSelectedCategory] = useState<string>(categories[0] ?? '');
+
+  const visibleProducts = useMemo(() => {
+    if (!selectedCategory) return products;
+    return products.filter((product) => product.category === selectedCategory);
+  }, [products, selectedCategory]);
 
   const subtotal = useMemo(() => cart.reduce((a, x) => a + x.lineTotal, 0), [cart]);
   const total = Math.max(0, subtotal - discount);
   const balance = received - total;
+  const dailyTarget = dailyTargetDb.getTarget().amount;
+  const todaySales = dailyTargetDb.getTodaySales();
+  const remainingTarget = Math.max(0, dailyTarget - todaySales);
 
   function addToCart(p: Product) {
     setCart((prev) => {
@@ -51,9 +60,17 @@ export function BillingPage() {
         next[idx] = { ...it, qty, lineTotal: qty * it.unitPrice };
         return next;
       }
-      return [...prev, { productId: p.id, name: p.name, qty: 1, unitPrice: p.sellPrice, lineTotal: p.sellPrice }];
+      return [
+        ...prev,
+        {
+          productId: p.id,
+          name: `${p.name} - ${p.category ?? 'Item'}`,
+          qty: 1,
+          unitPrice: p.sellPrice,
+          lineTotal: p.sellPrice,
+        },
+      ];
     });
-    setQ('');
   }
 
   return (
@@ -63,51 +80,152 @@ export function BillingPage() {
           Billing / POS
         </Typography>
         <Typography variant="body2" color="text.secondary" gutterBottom>
-          Type product name/SKU/barcode to add items.
+          Select a Kouju Pitta category and tap a box to add it to the bill.
         </Typography>
+        {dailyTarget > 0 ? (
+          <Typography variant="body2" sx={{ mb: 1.5, color: remainingTarget > 0 ? 'warning.light' : 'success.light' }}>
+            {remainingTarget > 0
+              ? `Daily target warning: ₹ ${money(remainingTarget)} more needed to complete today's target.`
+              : 'Daily target completed for today.'}
+          </Typography>
+        ) : null}
 
         <Card>
-          <CardContent>
-            <TextField
-              label="Search product (or scan barcode)"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              fullWidth
-            />
-
-            {matches.length ? (
-              <Box sx={{ mt: 1, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-                {matches.map((p) => (
+          <CardContent sx={{ display: 'grid', gap: 2 }}>
+            {!products.length ? (
+              <Box
+                sx={{
+                  minHeight: 220,
+                  display: 'grid',
+                  placeItems: 'center',
+                  textAlign: 'center',
+                }}
+              >
+                <Box sx={{ maxWidth: 320 }}>
+                  <Typography variant="h6" fontWeight={900}>
+                    No products added yet
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.8 }}>
+                    Add your real inventory in Products first, then billing boxes will appear here.
+                  </Typography>
+                </Box>
+              </Box>
+            ) : (
+              <>
+                <Box>
+                  <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 1 }}>
+                    Categories
+                  </Typography>
                   <Box
-                    key={p.id}
-                    onClick={() => addToCart(p)}
                     sx={{
-                      px: 1.5,
-                      py: 1,
-                      cursor: 'pointer',
-                      '&:hover': { bgcolor: 'action.hover' },
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      gap: 2,
+                      display: 'grid',
+                      gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)' },
+                      gap: 1.2,
                     }}
                   >
-                    <Box>
-                      <Typography fontWeight={600}>{p.name}</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {p.sku ?? '-'} • stock {p.stock}
-                      </Typography>
-                    </Box>
-                    <Typography fontWeight={700}>₹ {money(p.sellPrice)}</Typography>
+                    {categories.map((category) => (
+                      <Box
+                        key={category}
+                        onClick={() => setSelectedCategory(category)}
+                        sx={(theme) => ({
+                          p: 1.5,
+                          borderRadius: 3,
+                          cursor: 'pointer',
+                          border:
+                            selectedCategory === category
+                              ? `1px solid ${alpha(theme.palette.primary.main, 0.6)}`
+                              : '1px solid rgba(255,255,255,0.08)',
+                          background:
+                            selectedCategory === category
+                              ? `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.24)}, rgba(255,255,255,0.04))`
+                              : 'rgba(255,255,255,0.02)',
+                          boxShadow:
+                            selectedCategory === category ? `0 18px 40px ${alpha(theme.palette.primary.dark, 0.25)}` : 'none',
+                          transition: 'all 160ms ease',
+                          '&:hover': {
+                            transform: 'translateY(-2px)',
+                            borderColor: alpha(theme.palette.primary.main, 0.42),
+                          },
+                        })}
+                      >
+                        <Typography fontWeight={900}>{category}</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Select to view items
+                        </Typography>
+                      </Box>
+                    ))}
                   </Box>
-                ))}
-              </Box>
-            ) : null}
+                </Box>
 
-            <Divider sx={{ my: 2 }} />
+                <Divider />
 
-            <Typography fontWeight={700} gutterBottom>
-              Cart
-            </Typography>
+                <Box>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.2 }}>
+                    <Typography variant="subtitle1" fontWeight={800}>
+                      {selectedCategory || 'Items'}
+                    </Typography>
+                    <Chip
+                      label={`${visibleProducts.length} item${visibleProducts.length === 1 ? '' : 's'}`}
+                      size="small"
+                      sx={{ bgcolor: 'rgba(255,255,255,0.05)' }}
+                    />
+                  </Stack>
+
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
+                      gap: 1.2,
+                    }}
+                  >
+                    {visibleProducts.map((product) => (
+                      <Box
+                        key={product.id}
+                        onClick={() => addToCart(product)}
+                        sx={(theme) => ({
+                          p: 1.6,
+                          borderRadius: 3,
+                          cursor: 'pointer',
+                          border: '1px solid rgba(255,255,255,0.08)',
+                          background:
+                            'linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02))',
+                          transition: 'all 160ms ease',
+                          '&:hover': {
+                            transform: 'translateY(-2px)',
+                            borderColor: alpha(theme.palette.secondary.main, 0.45),
+                            boxShadow: `0 16px 34px ${alpha(theme.palette.common.black, 0.22)}`,
+                          },
+                        })}
+                      >
+                        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
+                          <Box>
+                            <Typography fontWeight={900}>{product.name}</Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.35 }}>
+                              {product.category}
+                            </Typography>
+                          </Box>
+                          <Chip
+                            label={`Stock ${product.stock}`}
+                            size="small"
+                            sx={{ bgcolor: 'rgba(34,197,94,0.12)', color: '#bbf7d0' }}
+                          />
+                        </Stack>
+                        <Typography variant="h6" fontWeight={900} sx={{ mt: 1.4 }}>
+                          ₹ {money(product.sellPrice)}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Tap to add to cart
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              </>
+            )}
+
+            <Divider />
+
+            <Typography fontWeight={700}>Cart</Typography>
 
             {cart.length === 0 ? (
               <Typography color="text.secondary">No items yet.</Typography>
@@ -118,7 +236,7 @@ export function BillingPage() {
                     key={it.productId}
                     sx={{
                       display: 'grid',
-                      gridTemplateColumns: '1fr auto auto auto',
+                      gridTemplateColumns: { xs: '1fr', sm: '1fr auto auto auto' },
                       gap: 1,
                       alignItems: 'center',
                     }}
@@ -208,8 +326,8 @@ export function BillingPage() {
               size="large"
               disabled={cart.length === 0}
               onClick={() => {
-                // placeholder: later call POST /sales
-                alert('Sale completed (demo). Next: wire backend + invoice print.');
+                dailyTargetDb.addSale(total);
+                alert('Sale completed successfully. Daily target progress updated.');
                 setCart([]);
                 setDiscount(0);
                 setReceived(0);
