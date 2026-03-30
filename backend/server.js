@@ -30,6 +30,7 @@ const defaultDb = {
   products: [],
   dailyTarget: { quantity: 0 },
   dailySales: {},
+  sales: [],
   sessions: [],
   users: [
     { id: 'user_admin', username: 'owner', password: 'password', role: 'admin' },
@@ -99,6 +100,7 @@ async function readJsonDb() {
         ...defaultDb.dailyTarget,
         ...(parsed.dailyTarget ?? {}),
       },
+      sales: Array.isArray(parsed.sales) ? parsed.sales : [],
       users,
       sessions,
     };
@@ -177,6 +179,26 @@ function createJsonStorage() {
       await writeJsonDb(db);
       return db.dailySales[key];
     },
+    async listSales() {
+      const db = await readJsonDb();
+      return [...(db.sales ?? [])].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    },
+    async createSale(sale) {
+      const db = await readJsonDb();
+      db.sales = [sale, ...(db.sales ?? [])];
+      db.products = db.products.map((product) => {
+        const soldItem = sale.items.find((item) => item.productId === product.id);
+        if (!soldItem) return product;
+        return {
+          ...product,
+          stock: Math.max(0, Number(product.stock ?? 0) - Number(soldItem.qty ?? 0)),
+        };
+      });
+      const key = todayKey();
+      db.dailySales[key] = Number(db.dailySales[key] ?? 0) + Number(sale.totalQuantity ?? 0);
+      await writeJsonDb(db);
+      return sale;
+    },
     async listUsers() {
       const db = await readJsonDb();
       return db.users;
@@ -239,6 +261,23 @@ function createPostgresStorage() {
         CREATE TABLE IF NOT EXISTS daily_sales (
           sale_date DATE PRIMARY KEY,
           quantity INTEGER NOT NULL DEFAULT 0
+        );
+      `);
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS sales (
+          id TEXT PRIMARY KEY,
+          invoice_number TEXT NOT NULL UNIQUE,
+          created_at TIMESTAMPTZ NOT NULL,
+          created_by_user_id TEXT NOT NULL REFERENCES users(id),
+          created_by_username TEXT NOT NULL,
+          payment_method TEXT NOT NULL,
+          subtotal NUMERIC NOT NULL DEFAULT 0,
+          discount NUMERIC NOT NULL DEFAULT 0,
+          total NUMERIC NOT NULL DEFAULT 0,
+          received NUMERIC NOT NULL DEFAULT 0,
+          balance NUMERIC NOT NULL DEFAULT 0,
+          total_quantity INTEGER NOT NULL DEFAULT 0,
+          items JSONB NOT NULL DEFAULT '[]'::jsonb
         );
       `);
 
@@ -363,6 +402,100 @@ function createPostgresStorage() {
         [todayKey(), quantity]
       );
       return Number(result.rows[0]?.quantity ?? 0);
+    },
+    async listSales() {
+      const result = await pool.query(
+        `
+          SELECT
+            id,
+            invoice_number,
+            created_at,
+            created_by_user_id,
+            created_by_username,
+            payment_method,
+            subtotal,
+            discount,
+            total,
+            received,
+            balance,
+            total_quantity,
+            items
+          FROM sales
+          ORDER BY created_at DESC
+        `
+      );
+      return result.rows.map((row) => ({
+        id: row.id,
+        invoiceNumber: row.invoice_number,
+        createdAt: row.created_at,
+        createdByUserId: row.created_by_user_id,
+        createdByUsername: row.created_by_username,
+        paymentMethod: row.payment_method,
+        subtotal: Number(row.subtotal ?? 0),
+        discount: Number(row.discount ?? 0),
+        total: Number(row.total ?? 0),
+        received: Number(row.received ?? 0),
+        balance: Number(row.balance ?? 0),
+        totalQuantity: Number(row.total_quantity ?? 0),
+        items: Array.isArray(row.items) ? row.items : [],
+      }));
+    },
+    async createSale(sale) {
+      await pool.query(
+        `
+          INSERT INTO sales (
+            id,
+            invoice_number,
+            created_at,
+            created_by_user_id,
+            created_by_username,
+            payment_method,
+            subtotal,
+            discount,
+            total,
+            received,
+            balance,
+            total_quantity,
+            items
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::jsonb)
+        `,
+        [
+          sale.id,
+          sale.invoiceNumber,
+          sale.createdAt,
+          sale.createdByUserId,
+          sale.createdByUsername,
+          sale.paymentMethod,
+          sale.subtotal,
+          sale.discount,
+          sale.total,
+          sale.received,
+          sale.balance,
+          sale.totalQuantity,
+          JSON.stringify(sale.items),
+        ]
+      );
+      for (const item of sale.items) {
+        await pool.query(
+          `
+            UPDATE products
+            SET stock = GREATEST(stock - $2, 0)
+            WHERE id = $1
+          `,
+          [item.productId, item.qty]
+        );
+      }
+      await pool.query(
+        `
+          INSERT INTO daily_sales (sale_date, quantity)
+          VALUES ($1::date, $2)
+          ON CONFLICT (sale_date)
+          DO UPDATE SET quantity = daily_sales.quantity + EXCLUDED.quantity
+        `,
+        [todayKey(), sale.totalQuantity]
+      );
+      return sale;
     },
     async listUsers() {
       const result = await pool.query(`SELECT id, username, password, role FROM users ORDER BY role DESC, username ASC`);
@@ -584,6 +717,48 @@ const server = createServer(async (req, res) => {
     const body = await readBody(req);
     const quantity = Math.max(0, Number(body.quantity ?? 0) || 0);
     return sendJson(res, 200, { quantity: await storage.addDailySale(quantity) });
+  }
+
+  if (pathname === '/api/sales' && req.method === 'GET') {
+    const authState = await requireAuth(req, res);
+    if (!authState) return;
+    return sendJson(res, 200, await storage.listSales());
+  }
+
+  if (pathname === '/api/sales' && req.method === 'POST') {
+    const authState = await requireAuth(req, res);
+    if (!authState) return;
+    const body = await readBody(req);
+    const items = Array.isArray(body.items)
+      ? body.items.map((item) => ({
+          productId: String(item.productId ?? ''),
+          name: String(item.name ?? '').trim(),
+          category: item.category ? String(item.category).trim() : undefined,
+          qty: Math.max(0, Number(item.qty ?? 0) || 0),
+          unitPrice: Math.max(0, Number(item.unitPrice ?? 0) || 0),
+          lineTotal: Math.max(0, Number(item.lineTotal ?? 0) || 0),
+        }))
+      : [];
+    if (!items.length) {
+      return sendJson(res, 400, { message: 'Add at least one item to create an invoice' });
+    }
+    const invoiceNumber = `INV-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${String(Date.now()).slice(-6)}`;
+    const sale = {
+      id: randomUUID(),
+      invoiceNumber,
+      createdAt: new Date().toISOString(),
+      createdByUserId: authState.user.id,
+      createdByUsername: authState.user.username,
+      paymentMethod: String(body.paymentMethod ?? 'Cash'),
+      subtotal: Math.max(0, Number(body.subtotal ?? 0) || 0),
+      discount: Math.max(0, Number(body.discount ?? 0) || 0),
+      total: Math.max(0, Number(body.total ?? 0) || 0),
+      received: Math.max(0, Number(body.received ?? 0) || 0),
+      balance: Number(body.balance ?? 0) || 0,
+      totalQuantity: Math.max(0, Number(body.totalQuantity ?? 0) || 0),
+      items,
+    };
+    return sendJson(res, 200, await storage.createSale(sale));
   }
 
   if (pathname === '/api/settings/auth' && req.method === 'GET') {

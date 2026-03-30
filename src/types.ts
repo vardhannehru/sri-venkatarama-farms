@@ -22,3 +22,28 @@ export type SessionUser = {
   username: string;
   role: UserRole;
 };
+
+export type SaleItem = {
+  productId: string;
+  name: string;
+  category?: string;
+  qty: number;
+  unitPrice: number;
+  lineTotal: number;
+};
+
+export type SaleRecord = {
+  id: string;
+  invoiceNumber: string;
+  createdAt: string;
+  createdByUserId: string;
+  createdByUsername: string;
+  paymentMethod: string;
+  subtotal: number;
+  discount: number;
+  total: number;
+  received: number;
+  balance: number;
+  totalQuantity: number;
+  items: SaleItem[];
+};

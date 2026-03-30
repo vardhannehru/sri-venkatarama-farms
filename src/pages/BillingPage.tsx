@@ -15,6 +15,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { CartItem, Product } from '../types';
 import { mockProductsDb } from '../lib/mockDb';
 import { dailyTargetDb } from '../lib/dailyTargetDb';
+import { salesApi } from '../lib/salesApi';
 
 const paymentMethods = ['Cash', 'UPI', 'Card', 'Mixed'] as const;
 
@@ -339,9 +340,29 @@ export function BillingPage() {
               disabled={cart.length === 0}
               onClick={async () => {
                 const totalBirds = cart.reduce((sum, item) => sum + item.qty, 0);
-                const updated = await dailyTargetDb.addSale(totalBirds);
-                setTodaySoldBirds(updated);
-                alert('Sale completed successfully. Daily target progress updated.');
+                const sale = await salesApi.create({
+                  paymentMethod,
+                  subtotal,
+                  discount,
+                  total,
+                  received,
+                  balance,
+                  totalQuantity: totalBirds,
+                  items: cart.map((item) => {
+                    const [name, category] = item.name.split(' - ');
+                    return {
+                      productId: item.productId,
+                      name: name ?? item.name,
+                      category: category || undefined,
+                      qty: item.qty,
+                      unitPrice: item.unitPrice,
+                      lineTotal: item.lineTotal,
+                    };
+                  }),
+                });
+                setProducts(await mockProductsDb.list());
+                setTodaySoldBirds(await dailyTargetDb.getTodayQuantity());
+                alert(`Invoice ${sale.invoiceNumber} created successfully.`);
                 setCart([]);
                 setDiscount(0);
                 setReceived(0);
