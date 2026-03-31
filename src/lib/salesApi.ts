@@ -22,4 +22,9 @@ export const salesApi = {
       body: JSON.stringify(input),
     });
   },
+  async remove(id: string): Promise<void> {
+    await apiFetch<{ ok: boolean }>(`/sales/${id}`, {
+      method: 'DELETE',
+    });
+  },
 };

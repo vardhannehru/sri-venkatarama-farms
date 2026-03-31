@@ -228,7 +228,7 @@ export function DashboardPage() {
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', xl: '1.3fr 1fr' }, gap: 2 }}>
         <Card>
           <CardContent>
-            <SectionHeader eyebrow="Recent Sales" title="Latest invoices" caption="These are the most recent completed sales from billing." />
+            <SectionHeader eyebrow="Recent Sales" title="Latest sales" caption="These are the most recent completed sales from billing." />
             {!recentSales.length ? (
               <Typography color="text.secondary">Complete your first sale and it will appear here.</Typography>
             ) : (
@@ -247,7 +247,9 @@ export function DashboardPage() {
                     }}
                   >
                     <Box>
-                      <Typography fontWeight={900}>{sale.invoiceNumber}</Typography>
+                      <Typography fontWeight={900}>
+                        {sale.items.map((item) => `${item.name}${item.category ? ` / ${item.category}` : ''}`).join(', ')}
+                      </Typography>
                       <Typography variant="body2" color="text.secondary">
                         {fmtDate(sale.createdAt)} by {sale.createdByUsername}
                       </Typography>

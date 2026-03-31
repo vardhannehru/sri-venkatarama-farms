@@ -4,6 +4,7 @@ import {
   Card,
   CardContent,
   Chip,
+  IconButton,
   InputAdornment,
   Stack,
   TextField,
@@ -11,10 +12,12 @@ import {
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { SaleRecord } from '../types';
+import { hasRole } from '../lib/auth';
 import { salesApi } from '../lib/salesApi';
 
 function money(n: number) {
@@ -53,6 +56,7 @@ function MetricCard({ label, value, sub }: { label: string; value: string; sub?:
 
 export function InvoicesPage() {
   const navigate = useNavigate();
+  const canDeleteInvoices = hasRole('admin');
   const [sales, setSales] = useState<SaleRecord[]>([]);
   const [query, setQuery] = useState('');
 
@@ -98,12 +102,7 @@ export function InvoicesPage() {
             Review saved bills, payment status, and invoice history.
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          sx={{ borderRadius: 10, fontWeight: 900 }}
-          onClick={() => navigate('/billing')}
-        >
+        <Button variant="contained" startIcon={<AddIcon />} sx={{ borderRadius: 10, fontWeight: 900 }} onClick={() => navigate('/billing')}>
           Create invoice
         </Button>
       </Box>
@@ -112,7 +111,7 @@ export function InvoicesPage() {
         <MetricCard label="Invoices" value={`${sales.length}`} sub="Saved bills" />
         <MetricCard label="Total sales" value={`₹ ${money(totalSales)}`} sub="Across all invoices" />
         <MetricCard label="Pending due" value={`₹ ${money(totalDue)}`} sub="Amount not yet received" />
-        <MetricCard label="Latest sale" value={sales[0] ? `₹ ${money(sales[0].total)}` : '₹ 0'} sub={sales[0] ? sales[0].invoiceNumber : 'No invoices yet'} />
+        <MetricCard label="Latest sale" value={sales[0] ? `₹ ${money(sales[0].total)}` : '₹ 0'} sub={sales[0] ? fmtDate(sales[0].createdAt) : 'No invoices yet'} />
       </Box>
 
       <Card>
@@ -156,7 +155,7 @@ export function InvoicesPage() {
                       borderRadius: 3,
                       border: '1px solid rgba(15,23,42,0.08)',
                       display: 'grid',
-                      gridTemplateColumns: { xs: '1fr', md: '1.2fr 1fr auto auto' },
+                      gridTemplateColumns: { xs: '1fr', md: '1.25fr 1fr auto auto auto' },
                       gap: 1.2,
                       alignItems: 'center',
                     }}
@@ -176,12 +175,21 @@ export function InvoicesPage() {
                         Paid: ₹ {money(sale.received)}
                       </Typography>
                     </Box>
-                    <Chip
-                      label={due > 0 ? `Due ₹ ${money(due)}` : 'Paid'}
-                      color={due > 0 ? 'warning' : 'success'}
-                      size="small"
-                    />
+                    <Chip label={due > 0 ? `Due ₹ ${money(due)}` : 'Paid'} color={due > 0 ? 'warning' : 'success'} size="small" />
                     <Chip label={sale.paymentMethod} size="small" variant="outlined" />
+                    {canDeleteInvoices ? (
+                      <IconButton
+                        color="error"
+                        onClick={async () => {
+                          await salesApi.remove(sale.id);
+                          setSales((prev) => prev.filter((item) => item.id !== sale.id));
+                        }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    ) : (
+                      <Box />
+                    )}
                   </Box>
                 );
               })}

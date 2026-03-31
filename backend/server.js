@@ -199,6 +199,24 @@ function createJsonStorage() {
       await writeJsonDb(db);
       return sale;
     },
+    async deleteSale(id) {
+      const db = await readJsonDb();
+      const sale = (db.sales ?? []).find((item) => item.id === id);
+      if (!sale) return null;
+      db.sales = (db.sales ?? []).filter((item) => item.id !== id);
+      db.products = db.products.map((product) => {
+        const soldItem = sale.items.find((item) => item.productId === product.id);
+        if (!soldItem) return product;
+        return {
+          ...product,
+          stock: Number(product.stock ?? 0) + Number(soldItem.qty ?? 0),
+        };
+      });
+      const saleDateKey = String(sale.createdAt ?? '').slice(0, 10) || todayKey();
+      db.dailySales[saleDateKey] = Math.max(0, Number(db.dailySales[saleDateKey] ?? 0) - Number(sale.totalQuantity ?? 0));
+      await writeJsonDb(db);
+      return sale;
+    },
     async listUsers() {
       const db = await readJsonDb();
       return db.users;
@@ -497,6 +515,40 @@ function createPostgresStorage() {
       );
       return sale;
     },
+    async deleteSale(id) {
+      const saleResult = await pool.query(
+        `
+          SELECT id, created_at, total_quantity, items
+          FROM sales
+          WHERE id = $1
+          LIMIT 1
+        `,
+        [id]
+      );
+      const sale = saleResult.rows[0];
+      if (!sale) return null;
+      const items = Array.isArray(sale.items) ? sale.items : [];
+      for (const item of items) {
+        await pool.query(
+          `
+            UPDATE products
+            SET stock = stock + $2
+            WHERE id = $1
+          `,
+          [item.productId, item.qty]
+        );
+      }
+      await pool.query(
+        `
+          UPDATE daily_sales
+          SET quantity = GREATEST(quantity - $2, 0)
+          WHERE sale_date = $1::date
+        `,
+        [String(sale.created_at).slice(0, 10), Number(sale.total_quantity ?? 0)]
+      );
+      await pool.query(`DELETE FROM sales WHERE id = $1`, [id]);
+      return sale;
+    },
     async listUsers() {
       const result = await pool.query(`SELECT id, username, password, role FROM users ORDER BY role DESC, username ASC`);
       return result.rows.map((row) => ({
@@ -759,6 +811,18 @@ const server = createServer(async (req, res) => {
       items,
     };
     return sendJson(res, 200, await storage.createSale(sale));
+  }
+
+  if (pathname.startsWith('/api/sales/') && req.method === 'DELETE') {
+    const authState = await requireAuth(req, res);
+    if (!authState) return;
+    if (!requireRole(authState, res, 'admin')) return;
+    const id = pathname.replace('/api/sales/', '');
+    const deleted = await storage.deleteSale(id);
+    if (!deleted) {
+      return sendJson(res, 404, { message: 'Invoice not found' });
+    }
+    return sendJson(res, 200, { ok: true });
   }
 
   if (pathname === '/api/settings/auth' && req.method === 'GET') {
