@@ -340,7 +340,7 @@ export function BillingPage() {
               disabled={cart.length === 0}
               onClick={async () => {
                 const totalBirds = cart.reduce((sum, item) => sum + item.qty, 0);
-                const sale = await salesApi.create({
+                await salesApi.create({
                   paymentMethod,
                   subtotal,
                   discount,
@@ -362,7 +362,7 @@ export function BillingPage() {
                 });
                 setProducts(await mockProductsDb.list());
                 setTodaySoldBirds(await dailyTargetDb.getTodayQuantity());
-                alert(`Invoice ${sale.invoiceNumber} created successfully.`);
+                alert('Sale saved successfully.');
                 setCart([]);
                 setDiscount(0);
                 setReceived(0);

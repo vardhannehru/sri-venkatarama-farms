@@ -69,7 +69,6 @@ export function InvoicesPage() {
     if (!q) return sales;
     return sales.filter((sale) =>
       [
-        sale.invoiceNumber,
         sale.createdByUsername,
         sale.paymentMethod,
         ...sale.items.map((item) => `${item.name} ${item.category ?? ''}`),
@@ -161,7 +160,9 @@ export function InvoicesPage() {
                     }}
                   >
                     <Box>
-                      <Typography fontWeight={900}>{sale.invoiceNumber}</Typography>
+                      <Typography fontWeight={900}>
+                        {sale.items.map((item) => `${item.name}${item.category ? ` / ${item.category}` : ''}`).join(', ')}
+                      </Typography>
                       <Typography variant="body2" color="text.secondary">
                         {fmtDate(sale.createdAt)} by {sale.createdByUsername}
                       </Typography>
