@@ -10,7 +10,7 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { login } from '../lib/auth';
+import { getCurrentRole, login } from '../lib/auth';
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -50,7 +50,8 @@ export function LoginPage() {
               setLoading(true);
               try {
                 await login(username, password);
-                navigate(from, { replace: true });
+                const role = getCurrentRole();
+                navigate(role === 'salesman' && from === '/' ? '/billing' : from, { replace: true });
               } catch (err: any) {
                 setError(err?.message ?? 'Login failed');
               } finally {

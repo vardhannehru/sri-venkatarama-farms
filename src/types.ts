@@ -16,6 +16,7 @@ export type CartItem = {
 };
 
 export type UserRole = 'admin' | 'salesman';
+export type PaymentGroup = 'Cash' | 'Bank';
 
 export type SessionUser = {
   id: string;
@@ -38,7 +39,10 @@ export type SaleRecord = {
   createdAt: string;
   createdByUserId: string;
   createdByUsername: string;
+  customerName?: string;
+  customerPhone?: string;
   paymentMethod: string;
+  paymentGroup: PaymentGroup;
   subtotal: number;
   discount: number;
   total: number;
@@ -46,4 +50,69 @@ export type SaleRecord = {
   balance: number;
   totalQuantity: number;
   items: SaleItem[];
+};
+
+export type PurchaseRecord = {
+  id: string;
+  createdAt: string;
+  birdType: string;
+  quantity: number;
+  unitCost: number;
+  sellPrice: number;
+  totalCost: number;
+  supplier?: string;
+  notes?: string;
+};
+
+export type MortalityRecord = {
+  id: string;
+  createdAt: string;
+  birdType: string;
+  quantity: number;
+  sickQuantity?: number;
+  notes?: string;
+};
+
+export type ExpenseRecord = {
+  id: string;
+  createdAt: string;
+  category: 'Feed' | 'Labour' | 'Electricity';
+  amount: number;
+  openingFeedKg?: number;
+  feedRatePerKg?: number;
+  feedReceivedKg?: number;
+  feedUsedKg?: number;
+  notes?: string;
+};
+
+export type DailyReportRecord = {
+  id: string;
+  reportDate: string;
+  openingBirds: number;
+  mortality: number;
+  sick: number;
+  closingBirds: number;
+  openingFeedKg: number;
+  usedFeedKg: number;
+  receivedFeedKg: number;
+  closingFeedKg: number;
+  perBirdKg: number;
+  perBirdFeedCost: number;
+  totalFeedCost: number;
+};
+
+export type CostingReportRecord = {
+  id: string;
+  reportDate: string;
+  birdCount: number;
+  perBirdCost: number;
+  totalCost: number;
+  feedPerKg: number;
+  perBirdFeedGrams: number;
+  totalFeedKg: number;
+  totalFeedCost: number;
+  otherExpenses: number;
+  gas: number;
+  dailyLabour: number;
+  totalCostInDay: number;
 };

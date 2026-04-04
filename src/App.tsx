@@ -8,8 +8,16 @@ import { InvoicesPage } from './pages/InvoicesPage';
 import { ProductsPage } from './pages/ProductsPage';
 import { CustomersPage } from './pages/CustomersPage';
 import { ExpensesPage } from './pages/ExpensesPage';
+import { PurchasesPage } from './pages/PurchasesPage';
+import { MortalityPage } from './pages/MortalityPage';
 import { ReportsPage } from './pages/ReportsPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { getCurrentRole } from './lib/auth';
+
+function HomeRedirect() {
+  const role = getCurrentRole();
+  return <Navigate to={role === 'salesman' ? '/billing' : '/'} replace />;
+}
 
 export default function App() {
   return (
@@ -24,14 +32,33 @@ export default function App() {
           </RequireAuth>
         }
       >
-        <Route index element={<DashboardPage />} />
+        <Route
+          index
+          element={getCurrentRole() === 'salesman' ? <Navigate to="/billing" replace /> : <DashboardPage />}
+        />
         <Route path="billing" element={<BillingPage />} />
         <Route path="invoices" element={<InvoicesPage />} />
+        <Route
+          path="purchases"
+          element={
+            <RequireAuth allowedRoles={['admin']}>
+              <PurchasesPage />
+            </RequireAuth>
+          }
+        />
         <Route
           path="products"
           element={
             <RequireAuth allowedRoles={['admin']}>
               <ProductsPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="mortality"
+          element={
+            <RequireAuth allowedRoles={['admin']}>
+              <MortalityPage />
             </RequireAuth>
           }
         />
@@ -69,7 +96,7 @@ export default function App() {
         />
       </Route>
 
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<HomeRedirect />} />
     </Routes>
   );
 }

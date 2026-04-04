@@ -4,6 +4,8 @@ import {
   Avatar,
   Badge,
   Box,
+  Chip,
+  CircularProgress,
   Divider,
   Drawer,
   IconButton,
@@ -23,6 +25,8 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
 import DescriptionIcon from '@mui/icons-material/Description';
 import Inventory2Icon from '@mui/icons-material/Inventory2';
+import ShoppingBasketIcon from '@mui/icons-material/ShoppingBasket';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import PeopleIcon from '@mui/icons-material/People';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import AssessmentIcon from '@mui/icons-material/Assessment';
@@ -32,9 +36,12 @@ import SearchIcon from '@mui/icons-material/Search';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import AutoGraphIcon from '@mui/icons-material/AutoGraph';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { getCurrentUser, logout } from '../../lib/auth';
 import type { UserRole } from '../../types';
+import { mockProductsDb } from '../../lib/mockDb';
+import { salesApi } from '../../lib/salesApi';
+import { purchasesApi } from '../../lib/purchasesApi';
 
 const drawerWidth = 222;
 
@@ -46,19 +53,33 @@ type NavItem = {
   roles: UserRole[];
 };
 
+type SearchResult = {
+  id: string;
+  title: string;
+  subtitle: string;
+  path: string;
+  kind: 'page' | 'product' | 'sale' | 'purchase';
+};
+
 const pageMeta: Record<string, { title: string; subtitle: string }> = {
   '/': { title: 'Dashboard', subtitle: 'Track sales, targets, and business health.' },
-  '/invoices': { title: 'Invoices', subtitle: 'Review billing records and customer invoices.' },
+  '/invoices': { title: 'Sales History', subtitle: 'Review completed sales, payments, and billing records.' },
+  '/purchases': { title: 'Purchases', subtitle: 'Add bird purchases to grow stock before sales.' },
   '/billing': { title: 'Billing', subtitle: 'Create fast sales and complete daily billing.' },
   '/products': { title: 'Products', subtitle: 'Manage inventory, pricing, and stock levels.' },
+  '/mortality': { title: 'Mortality', subtitle: 'Record bird deaths and sick birds so daily counts stay accurate.' },
   '/customers': { title: 'Customers', subtitle: 'View and manage your customer records.' },
   '/expenses': { title: 'Expenses', subtitle: 'Track outgoing costs and operating expenses.' },
-  '/reports': { title: 'Reports', subtitle: 'Analyze performance with business reports.' },
+  '/reports': { title: 'Daily Report', subtitle: 'Automatically calculated from purchases, sales, mortality, and feed expenses.' },
   '/settings': { title: 'Settings', subtitle: 'Adjust app configuration and preferences.' },
 };
 
 export function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const navigate = useNavigate();
   const location = useLocation();
   const currentUser = getCurrentUser();
@@ -67,12 +88,14 @@ export function AppLayout() {
   const items: NavItem[] = useMemo(
     () => [
       { label: 'Dashboard', path: '/', icon: <DashboardIcon />, section: 'main', roles: ['admin', 'salesman'] },
-      { label: 'Invoices', path: '/invoices', icon: <DescriptionIcon />, section: 'main', roles: ['admin', 'salesman'] },
+      { label: 'Sales History', path: '/invoices', icon: <DescriptionIcon />, section: 'main', roles: ['admin', 'salesman'] },
       { label: 'Billing', path: '/billing', icon: <PointOfSaleIcon />, section: 'main', roles: ['admin', 'salesman'] },
+      { label: 'Purchases', path: '/purchases', icon: <ShoppingBasketIcon />, section: 'main', roles: ['admin'] },
       { label: 'Products', path: '/products', icon: <Inventory2Icon />, section: 'main', roles: ['admin'] },
+      { label: 'Mortality', path: '/mortality', icon: <WarningAmberIcon />, section: 'main', roles: ['admin'] },
       { label: 'Customers', path: '/customers', icon: <PeopleIcon />, section: 'management', roles: ['admin'] },
       { label: 'Expenses', path: '/expenses', icon: <ReceiptLongIcon />, section: 'management', roles: ['admin'] },
-      { label: 'Reports', path: '/reports', icon: <AssessmentIcon />, section: 'management', roles: ['admin'] },
+      { label: 'Daily Report', path: '/reports', icon: <AssessmentIcon />, section: 'management', roles: ['admin'] },
       { label: 'Settings', path: '/settings', icon: <SettingsIcon />, section: 'management', roles: ['admin'] },
     ],
     []
@@ -83,6 +106,111 @@ export function AppLayout() {
     title: 'Farm Suite',
     subtitle: 'Manage billing, stock, and reporting from one place.',
   };
+
+  useEffect(() => {
+    const query = searchText.trim().toLowerCase();
+    if (!query) {
+      setSearchResults([]);
+      setSearchLoading(false);
+      return;
+    }
+
+    let active = true;
+    setSearchLoading(true);
+
+    const timer = window.setTimeout(() => {
+      const pageResults: SearchResult[] = visibleItems
+        .filter((item) => item.label.toLowerCase().includes(query))
+        .map((item) => ({
+          id: `page-${item.path}`,
+          title: item.label,
+          subtitle: 'Open page',
+          path: item.path,
+          kind: 'page',
+        }));
+
+      const requests: Promise<SearchResult[]>[] = [
+        mockProductsDb
+          .list()
+          .then((products) =>
+            products
+              .filter((product) => `${product.name} ${product.category ?? ''}`.toLowerCase().includes(query))
+              .slice(0, 4)
+              .map((product) => ({
+                id: `product-${product.id}`,
+                title: product.name,
+                subtitle: `${product.category ?? 'Product'} • Stock ${product.stock}`,
+                path: '/products',
+                kind: 'product' as const,
+              }))
+          )
+          .catch(() => []),
+        salesApi
+          .list()
+          .then((sales) =>
+            sales
+              .filter((sale) => {
+                const haystack = [
+                  sale.customerName ?? '',
+                  sale.customerPhone ?? '',
+                  sale.createdByUsername,
+                  ...sale.items.map((item) => `${item.name} ${item.category ?? ''}`),
+                ]
+                  .join(' ')
+                  .toLowerCase();
+                return haystack.includes(query);
+              })
+              .slice(0, 4)
+              .map((sale) => ({
+                id: `sale-${sale.id}`,
+                title: sale.customerName || sale.items.map((item) => item.name).join(', '),
+                subtitle: `${sale.customerPhone ?? 'No phone'} • ₹${sale.total}`,
+                path: '/invoices',
+                kind: 'sale' as const,
+              }))
+          )
+          .catch(() => []),
+      ];
+
+      if (role === 'admin') {
+        requests.push(
+          purchasesApi
+            .list()
+            .then((purchases) =>
+              purchases
+                .filter((purchase) => `${purchase.birdType} ${purchase.supplier ?? ''}`.toLowerCase().includes(query))
+                .slice(0, 4)
+                .map((purchase) => ({
+                  id: `purchase-${purchase.id}`,
+                  title: purchase.birdType,
+                  subtitle: `${purchase.quantity} birds${purchase.supplier ? ` • ${purchase.supplier}` : ''}`,
+                  path: '/purchases',
+                  kind: 'purchase' as const,
+                }))
+            )
+            .catch(() => [])
+        );
+      }
+
+      Promise.all(requests).then((groups) => {
+        if (!active) return;
+        setSearchResults([...pageResults, ...groups.flat()].slice(0, 8));
+        setSearchLoading(false);
+      });
+    }, 220);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [searchText, visibleItems, role]);
+
+  function openSearchResult(path: string) {
+    navigate(path);
+    setSearchText('');
+    setSearchResults([]);
+    setSearchOpen(false);
+  }
 
   function renderNavItem(it: NavItem) {
     const selected = location.pathname === it.path;
@@ -289,6 +417,7 @@ export function AppLayout() {
           <Box
             sx={(t) => ({
               display: { xs: 'none', md: 'flex' },
+              position: 'relative',
               alignItems: 'center',
               gap: 1,
               px: 1.5,
@@ -301,9 +430,85 @@ export function AppLayout() {
           >
             <SearchIcon fontSize="small" sx={{ color: 'text.secondary' }} />
             <InputBase
-              placeholder="Search products, invoices, customers"
+              placeholder="Search pages, products, sales"
               sx={{ color: 'inherit', fontSize: 14, width: '100%' }}
+              value={searchText}
+              onFocus={() => setSearchOpen(true)}
+              onChange={(e) => {
+                setSearchText(e.target.value);
+                setSearchOpen(true);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && searchResults[0]) {
+                  e.preventDefault();
+                  openSearchResult(searchResults[0].path);
+                }
+                if (e.key === 'Escape') {
+                  setSearchOpen(false);
+                }
+              }}
             />
+            {searchLoading ? <CircularProgress size={16} /> : null}
+
+            {searchOpen && searchText.trim() ? (
+              <Box
+                sx={(t) => ({
+                  position: 'absolute',
+                  top: 'calc(100% + 10px)',
+                  left: 0,
+                  right: 0,
+                  zIndex: t.zIndex.modal,
+                  p: 1,
+                  borderRadius: 3,
+                  border: `1px solid ${alpha(t.palette.divider, 0.95)}`,
+                  background: alpha('#ffffff', 0.98),
+                  boxShadow: '0 18px 36px rgba(15,23,42,0.12)',
+                  backdropFilter: 'blur(12px)',
+                })}
+              >
+                {searchResults.length ? (
+                  <Stack spacing={0.6}>
+                    {searchResults.map((result) => (
+                      <Box
+                        key={result.id}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          openSearchResult(result.path);
+                        }}
+                        sx={(t) => ({
+                          p: 1,
+                          borderRadius: 2.2,
+                          cursor: 'pointer',
+                          '&:hover': {
+                            backgroundColor: alpha(t.palette.primary.main, 0.06),
+                          },
+                        })}
+                      >
+                        <Stack direction="row" justifyContent="space-between" spacing={1}>
+                          <Box sx={{ minWidth: 0 }}>
+                            <Typography variant="body2" fontWeight={800} noWrap>
+                              {result.title}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" noWrap>
+                              {result.subtitle}
+                            </Typography>
+                          </Box>
+                          <Chip
+                            size="small"
+                            label={result.kind}
+                            sx={{ textTransform: 'capitalize', bgcolor: 'rgba(15,23,42,0.05)' }}
+                          />
+                        </Stack>
+                      </Box>
+                    ))}
+                  </Stack>
+                ) : !searchLoading ? (
+                  <Typography variant="body2" color="text.secondary" sx={{ p: 1 }}>
+                    No matching pages or records found.
+                  </Typography>
+                ) : null}
+              </Box>
+            ) : null}
           </Box>
 
           <Stack direction="row" spacing={1} alignItems="center">

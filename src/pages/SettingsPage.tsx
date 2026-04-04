@@ -101,7 +101,7 @@ export function SettingsPage() {
                 <Typography variant="body2" color="text.secondary">
                   {user.role === 'admin'
                     ? 'Full access for products, settings, reports, and target setup.'
-                    : 'Limited access for billing, invoices, and dashboard progress.'}
+                    : 'Limited access for billing, sales history, and dashboard progress.'}
                 </Typography>
               </Box>
 

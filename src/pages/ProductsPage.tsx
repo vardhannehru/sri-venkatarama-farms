@@ -1,4 +1,5 @@
 import {
+  Alert,
   Box,
   Button,
   Card,
@@ -16,15 +17,23 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import { DataGrid, type GridColDef } from '@mui/x-data-grid';
 import { useEffect, useMemo, useState } from 'react';
-import type { Product } from '../types';
+import type { MortalityRecord, Product, PurchaseRecord } from '../types';
 import { hasRole } from '../lib/auth';
 import { mockProductsDb } from '../lib/mockDb';
+import { expensesApi } from '../lib/expensesApi';
+import { purchasesApi } from '../lib/purchasesApi';
+import { mortalitiesApi } from '../lib/mortalitiesApi';
+import { getCurrentProductCost } from '../lib/costing';
 
 function uid() {
   return 'p_' + Math.random().toString(36).slice(2, 10);
 }
 
 type ProductDraft = Omit<Product, 'id'> & { id?: string };
+
+function numberInputValue(value: number | undefined) {
+  return value && value !== 0 ? String(value) : '';
+}
 
 function ProductDialog({
   open,
@@ -65,23 +74,27 @@ function ProductDialog({
           <TextField
             label="Cost Price"
             type="number"
-            value={draft.costPrice ?? 0}
-            onChange={(e) => setDraft((d) => ({ ...d, costPrice: Number(e.target.value) }))}
+            value={numberInputValue(draft.costPrice)}
+            onChange={(e) =>
+              setDraft((d) => ({ ...d, costPrice: e.target.value === '' ? 0 : Number(e.target.value) }))
+            }
             fullWidth
           />
           <TextField
             label="Sell Price"
             type="number"
-            value={draft.sellPrice ?? 0}
-            onChange={(e) => setDraft((d) => ({ ...d, sellPrice: Number(e.target.value) }))}
+            value={numberInputValue(draft.sellPrice)}
+            onChange={(e) =>
+              setDraft((d) => ({ ...d, sellPrice: e.target.value === '' ? 0 : Number(e.target.value) }))
+            }
             fullWidth
           />
         </Stack>
         <TextField
           label="Stock"
           type="number"
-          value={draft.stock ?? 0}
-          onChange={(e) => setDraft((d) => ({ ...d, stock: Number(e.target.value) }))}
+          value={numberInputValue(draft.stock)}
+          onChange={(e) => setDraft((d) => ({ ...d, stock: e.target.value === '' ? 0 : Number(e.target.value) }))}
         />
       </DialogContent>
       <DialogActions>
@@ -111,12 +124,35 @@ function ProductDialog({
 export function ProductsPage() {
   const canManageProducts = hasRole('admin');
   const [rows, setRows] = useState<Product[]>([]);
+  const [purchases, setPurchases] = useState<PurchaseRecord[]>([]);
+  const [mortalities, setMortalities] = useState<MortalityRecord[]>([]);
+  const [totalExpenses, setTotalExpenses] = useState(0);
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
+  const [error, setError] = useState('');
+
+  async function loadProducts() {
+    try {
+      const [list, expenseRows, purchaseRows, mortalityRows] = await Promise.all([
+        mockProductsDb.list(),
+        expensesApi.list().catch(() => []),
+        purchasesApi.list().catch(() => []),
+        mortalitiesApi.list().catch(() => []),
+      ]);
+      setRows(list);
+      setTotalExpenses(expenseRows.reduce((sum, row) => sum + row.amount, 0));
+      setPurchases(purchaseRows);
+      setMortalities(mortalityRows);
+      setError('');
+    } catch (err) {
+      setRows([]);
+      setError(err instanceof Error ? err.message : 'Unable to load products');
+    }
+  }
 
   useEffect(() => {
-    mockProductsDb.list().then(setRows).catch(() => setRows([]));
+    void loadProducts();
   }, []);
 
   const filtered = useMemo(() => {
@@ -131,7 +167,15 @@ export function ProductsPage() {
     { field: 'name', headerName: 'Name', flex: 1, minWidth: 150 },
     { field: 'category', headerName: 'Category', width: 150 },
     { field: 'stock', headerName: 'Stock', width: 90, type: 'number' },
-    { field: 'costPrice', headerName: 'Cost', width: 100, type: 'number' },
+    { field: 'costPrice', headerName: 'Base Cost', width: 110, type: 'number' },
+    {
+      field: 'currentCost',
+      headerName: 'Current Cost',
+      width: 120,
+      sortable: false,
+      valueGetter: (_value, row) =>
+        Number(getCurrentProductCost(row, rows, purchases, mortalities, totalExpenses).toFixed(2)),
+    },
     { field: 'sellPrice', headerName: 'Sell', width: 100, type: 'number' },
     {
       field: 'actions',
@@ -156,7 +200,7 @@ export function ProductsPage() {
                 size="small"
                 color="error"
                 onClick={() => {
-                  mockProductsDb.remove(params.row.id).then(() => mockProductsDb.list().then(setRows));
+                  mockProductsDb.remove(params.row.id).then(() => void loadProducts());
                 }}
               >
                 <DeleteIcon fontSize="small" />
@@ -176,7 +220,7 @@ export function ProductsPage() {
             Products
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Manage Kouju Pitta live birds, dressing, eggs, chicks, pricing, and stock levels.
+            Base cost comes from purchase price. Current live-bird cost rises automatically as feed, labour, and electricity expenses increase.
           </Typography>
         </Box>
         <TextField size="small" label="Search" value={q} onChange={(e) => setQ(e.target.value)} />
@@ -192,6 +236,8 @@ export function ProductsPage() {
           </Button>
         ) : null}
       </Stack>
+
+      {error ? <Alert severity="error">{error}</Alert> : null}
 
       <Card>
         <CardContent>
@@ -224,7 +270,7 @@ export function ProductsPage() {
           onClose={() => setOpen(false)}
           onSave={async (p) => {
             await mockProductsDb.upsert(p);
-            setRows(await mockProductsDb.list());
+            await loadProducts();
             setOpen(false);
           }}
         />

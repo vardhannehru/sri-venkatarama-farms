@@ -18,19 +18,25 @@ import { dailyTargetDb } from '../lib/dailyTargetDb';
 import { salesApi } from '../lib/salesApi';
 
 const paymentMethods = ['Cash', 'UPI', 'Card', 'Mixed'] as const;
-
 type PaymentMethod = (typeof paymentMethods)[number];
 
 function money(n: number) {
   return new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }).format(n);
 }
 
+function paymentGroupFor(method: PaymentMethod) {
+  return method === 'Cash' ? 'Cash' : 'Bank';
+}
+
 export function BillingPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [discount, setDiscount] = useState(0);
+  const [qtyDrafts, setQtyDrafts] = useState<Record<string, string>>({});
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [discount, setDiscount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Cash');
-  const [received, setReceived] = useState(0);
+  const [received, setReceived] = useState('');
   const [dailyTarget, setDailyTarget] = useState(0);
   const [todaySoldBirds, setTodaySoldBirds] = useState(0);
 
@@ -44,8 +50,7 @@ export function BillingPage() {
     () => Array.from(new Set(products.map((product) => product.category).filter(Boolean))) as string[],
     [products]
   );
-
-  const [selectedCategory, setSelectedCategory] = useState<string>(categories[0] ?? '');
+  const [selectedCategory, setSelectedCategory] = useState('');
 
   useEffect(() => {
     if (!selectedCategory && categories.length) {
@@ -57,30 +62,49 @@ export function BillingPage() {
     if (!selectedCategory) return products;
     return products.filter((product) => product.category === selectedCategory);
   }, [products, selectedCategory]);
+  const productStockById = useMemo(
+    () => new Map(products.map((product) => [product.id, Math.max(0, Number(product.stock ?? 0))])),
+    [products]
+  );
 
-  const subtotal = useMemo(() => cart.reduce((a, x) => a + x.lineTotal, 0), [cart]);
-  const total = Math.max(0, subtotal - discount);
-  const balance = received - total;
+  const discountValue = Math.max(0, Number(discount) || 0);
+  const receivedValue = Math.max(0, Number(received) || 0);
+  const subtotal = useMemo(() => cart.reduce((sum, item) => sum + item.lineTotal, 0), [cart]);
+  const total = Math.max(0, subtotal - discountValue);
+  const balance = receivedValue - total;
+  const dueAmount = Math.max(0, total - receivedValue);
   const remainingTarget = Math.max(0, dailyTarget - todaySoldBirds);
+  const hasStockIssue = cart.some((item) => item.qty > (productStockById.get(item.productId) ?? 0));
+  const dueNeedsCustomerDetails = dueAmount > 0;
+  const missingDueCustomerDetails = dueNeedsCustomerDetails && (!customerName.trim() || !customerPhone.trim());
 
-  function addToCart(p: Product) {
+  function addToCart(product: Product) {
+    if (product.stock <= 0) {
+      return;
+    }
     setCart((prev) => {
-      const idx = prev.findIndex((x) => x.productId === p.id);
-      if (idx >= 0) {
+      const existingIndex = prev.findIndex((item) => item.productId === product.id);
+      if (existingIndex >= 0) {
         const next = [...prev];
-        const it = next[idx];
-        const qty = it.qty + 1;
-        next[idx] = { ...it, qty, lineTotal: qty * it.unitPrice };
+        const current = next[existingIndex];
+        const maxStock = productStockById.get(product.id) ?? 0;
+        if (current.qty >= maxStock) {
+          return prev;
+        }
+        const qty = current.qty + 1;
+        setQtyDrafts((drafts) => ({ ...drafts, [product.id]: String(qty) }));
+        next[existingIndex] = { ...current, qty, lineTotal: qty * current.unitPrice };
         return next;
       }
+      setQtyDrafts((drafts) => ({ ...drafts, [product.id]: '1' }));
       return [
         ...prev,
         {
-          productId: p.id,
-          name: `${p.name} - ${p.category ?? 'Item'}`,
+          productId: product.id,
+          name: `${product.name} - ${product.category ?? 'Item'}`,
           qty: 1,
-          unitPrice: p.sellPrice,
-          lineTotal: p.sellPrice,
+          unitPrice: product.sellPrice,
+          lineTotal: product.sellPrice,
         },
       ];
     });
@@ -93,12 +117,12 @@ export function BillingPage() {
           Billing / POS
         </Typography>
         <Typography variant="body2" color="text.secondary" gutterBottom>
-          Select a Kouju Pitta category and tap a box to add it to the bill.
+          Select a farm sales category and tap a box to add it to the bill.
         </Typography>
         {dailyTarget > 0 ? (
           <Typography variant="body2" sx={{ mb: 1.5, color: remainingTarget > 0 ? 'warning.light' : 'success.light' }}>
             {remainingTarget > 0
-              ? `Daily target warning: ${remainingTarget} more quail birds needed to complete today's target.`
+              ? `Daily target warning: ${remainingTarget} more birds needed to complete today's target.`
               : 'Daily target completed for today.'}
           </Typography>
         ) : null}
@@ -106,27 +130,23 @@ export function BillingPage() {
         <Card>
           <CardContent sx={{ display: 'grid', gap: 2 }}>
             {!products.length ? (
-              <Box
-                sx={{
-                  minHeight: 220,
-                  display: 'grid',
-                  placeItems: 'center',
-                  textAlign: 'center',
-                }}
-              >
+              <Box sx={{ minHeight: 220, display: 'grid', placeItems: 'center', textAlign: 'center' }}>
                 <Box sx={{ maxWidth: 320 }}>
                   <Typography variant="h6" fontWeight={900}>
                     No products added yet
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mt: 0.8 }}>
-                    Add your real inventory in Products first, then billing boxes will appear here.
+                    Add your real farm inventory in Products first, then billing boxes will appear here.
                   </Typography>
                 </Box>
               </Box>
             ) : (
               <>
                 <Box>
-                  <Typography variant="subtitle2" sx={{ mb: 1, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 1 }}>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ mb: 1, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 1 }}
+                  >
                     Categories
                   </Typography>
                   <Box
@@ -150,10 +170,12 @@ export function BillingPage() {
                               : '1px solid rgba(15,23,42,0.08)',
                           background:
                             selectedCategory === category
-                              ? `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.10)}, rgba(255,255,255,0.98))`
+                              ? `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)}, rgba(255,255,255,0.98))`
                               : 'rgba(255,255,255,0.98)',
                           boxShadow:
-                            selectedCategory === category ? `0 14px 30px ${alpha(theme.palette.primary.main, 0.10)}` : 'none',
+                            selectedCategory === category
+                              ? `0 14px 30px ${alpha(theme.palette.primary.main, 0.1)}`
+                              : 'none',
                           transition: 'all 160ms ease',
                           '&:hover': {
                             transform: 'translateY(-2px)',
@@ -198,15 +220,27 @@ export function BillingPage() {
                         sx={(theme) => ({
                           p: 1.6,
                           borderRadius: 3,
-                          cursor: 'pointer',
-                          border: '1px solid rgba(15,23,42,0.08)',
+                          cursor: product.stock > 0 ? 'pointer' : 'not-allowed',
+                          border:
+                            product.stock > 0
+                              ? '1px solid rgba(15,23,42,0.08)'
+                              : '1px solid rgba(239,68,68,0.18)',
                           background:
-                            'linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,1))',
+                            product.stock > 0
+                              ? 'linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,1))'
+                              : 'linear-gradient(180deg, rgba(254,242,242,0.98), rgba(255,255,255,1))',
+                          opacity: product.stock > 0 ? 1 : 0.72,
                           transition: 'all 160ms ease',
                           '&:hover': {
-                            transform: 'translateY(-2px)',
-                            borderColor: alpha(theme.palette.secondary.main, 0.45),
-                            boxShadow: `0 16px 34px ${alpha(theme.palette.primary.main, 0.08)}`,
+                            transform: product.stock > 0 ? 'translateY(-2px)' : 'none',
+                            borderColor:
+                              product.stock > 0
+                                ? alpha(theme.palette.secondary.main, 0.45)
+                                : alpha(theme.palette.error.main, 0.35),
+                            boxShadow:
+                              product.stock > 0
+                                ? `0 16px 34px ${alpha(theme.palette.primary.main, 0.08)}`
+                                : 'none',
                           },
                         })}
                       >
@@ -218,16 +252,19 @@ export function BillingPage() {
                             </Typography>
                           </Box>
                           <Chip
-                            label={`Stock ${product.stock}`}
+                            label={product.stock > 0 ? `Stock ${product.stock}` : 'Out of stock'}
                             size="small"
-                            sx={{ bgcolor: 'rgba(34,197,94,0.12)', color: '#bbf7d0' }}
+                            sx={{
+                              bgcolor: product.stock > 0 ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
+                              color: product.stock > 0 ? 'success.dark' : 'error.main',
+                            }}
                           />
                         </Stack>
                         <Typography variant="h6" fontWeight={900} sx={{ mt: 1.4 }}>
-                          ₹ {money(product.sellPrice)}
+                          {`\u20B9 ${money(product.sellPrice)}`}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          Tap to add to cart
+                          {product.stock > 0 ? 'Tap to add to cart' : 'Stock finished'}
                         </Typography>
                       </Box>
                     ))}
@@ -240,13 +277,13 @@ export function BillingPage() {
 
             <Typography fontWeight={700}>Cart</Typography>
 
-            {cart.length === 0 ? (
+            {!cart.length ? (
               <Typography color="text.secondary">No items yet.</Typography>
             ) : (
               <Box sx={{ display: 'grid', gap: 1 }}>
-                {cart.map((it) => (
+                {cart.map((item) => (
                   <Box
-                    key={it.productId}
+                    key={item.productId}
                     sx={{
                       display: 'grid',
                       gridTemplateColumns: { xs: '1fr', sm: '1fr auto auto auto' },
@@ -254,28 +291,54 @@ export function BillingPage() {
                       alignItems: 'center',
                     }}
                   >
-                    <Typography fontWeight={600}>{it.name}</Typography>
+                    <Typography fontWeight={600}>{item.name}</Typography>
                     <TextField
                       size="small"
                       label="Qty"
-                      type="number"
-                      value={it.qty}
+                      type="text"
+                      inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }}
+                      value={qtyDrafts[item.productId] ?? String(item.qty)}
+                      onFocus={(e) => e.target.select()}
                       onChange={(e) => {
-                        const qty = Math.max(1, Number(e.target.value));
+                        const raw = e.target.value.replace(/[^\d]/g, '');
+                        setQtyDrafts((drafts) => ({ ...drafts, [item.productId]: raw }));
+                        if (raw === '') {
+                          return;
+                        }
+                        const maxStock = productStockById.get(item.productId) ?? 0;
+                        const qty = Math.min(Math.max(1, Number(raw)), maxStock);
                         setCart((prev) =>
-                          prev.map((x) =>
-                            x.productId === it.productId
-                              ? { ...x, qty, lineTotal: qty * x.unitPrice }
-                              : x
+                          prev.map((current) =>
+                            current.productId === item.productId
+                              ? { ...current, qty, lineTotal: qty * current.unitPrice }
+                              : current
                           )
                         );
                       }}
+                      onBlur={() => {
+                        const maxStock = productStockById.get(item.productId) ?? 0;
+                        const raw = qtyDrafts[item.productId] ?? String(item.qty);
+                        const qty = Math.min(Math.max(1, Number(raw) || item.qty), maxStock || item.qty);
+                        setCart((prev) =>
+                          prev.map((current) =>
+                            current.productId === item.productId
+                              ? { ...current, qty, lineTotal: qty * current.unitPrice }
+                              : current
+                          )
+                        );
+                        setQtyDrafts((drafts) => ({ ...drafts, [item.productId]: String(qty) }));
+                      }}
                       sx={{ width: 90 }}
                     />
-                    <Typography>₹ {money(it.unitPrice)}</Typography>
-                    <Typography fontWeight={700}>₹ {money(it.lineTotal)}</Typography>
+                    <Typography>{`\u20B9 ${money(item.unitPrice)}`}</Typography>
+                    <Typography fontWeight={700}>{`\u20B9 ${money(item.lineTotal)}`}</Typography>
                   </Box>
                 ))}
+                {hasStockIssue ? (
+                  <Typography color="error.main" variant="body2">
+                    One or more cart items are above available stock. Reduce quantity to continue.
+                  </Typography>
+                ) : null}
                 <Button color="error" onClick={() => setCart([])}>
                   Clear cart
                 </Button>
@@ -289,20 +352,36 @@ export function BillingPage() {
         <Card>
           <CardContent sx={{ display: 'grid', gap: 1.5 }}>
             <Typography fontWeight={800}>Totals</Typography>
+            <TextField
+              label="Customer name"
+              value={customerName}
+              onChange={(e) => setCustomerName(e.target.value)}
+              required={dueNeedsCustomerDetails}
+              error={dueNeedsCustomerDetails && !customerName.trim()}
+              helperText={dueNeedsCustomerDetails && !customerName.trim() ? 'Customer name is required for due sales.' : ' '}
+            />
+            <TextField
+              label="Customer phone"
+              value={customerPhone}
+              onChange={(e) => setCustomerPhone(e.target.value.replace(/[^\d+\s-]/g, ''))}
+              required={dueNeedsCustomerDetails}
+              error={dueNeedsCustomerDetails && !customerPhone.trim()}
+              helperText={dueNeedsCustomerDetails && !customerPhone.trim() ? 'Customer phone is required for due sales.' : ' '}
+            />
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
               <Typography color="text.secondary">Subtotal</Typography>
-              <Typography>₹ {money(subtotal)}</Typography>
+              <Typography>{`\u20B9 ${money(subtotal)}`}</Typography>
             </Box>
             <TextField
               label="Discount"
               type="number"
               value={discount}
-              onChange={(e) => setDiscount(Math.max(0, Number(e.target.value)))}
+              onChange={(e) => setDiscount(e.target.value)}
             />
             <Divider />
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
               <Typography fontWeight={800}>Total</Typography>
-              <Typography fontWeight={800}>₹ {money(total)}</Typography>
+              <Typography fontWeight={800}>{`\u20B9 ${money(total)}`}</Typography>
             </Box>
 
             <TextField
@@ -311,18 +390,25 @@ export function BillingPage() {
               value={paymentMethod}
               onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
             >
-              {paymentMethods.map((m) => (
-                <MenuItem key={m} value={m}>
-                  {m}
+              {paymentMethods.map((method) => (
+                <MenuItem key={method} value={method}>
+                  {method}
                 </MenuItem>
               ))}
             </TextField>
+
+            <Chip
+              label={`Collection goes to ${paymentGroupFor(paymentMethod)}`}
+              size="small"
+              color={paymentGroupFor(paymentMethod) === 'Cash' ? 'warning' : 'primary'}
+              variant="outlined"
+            />
 
             <TextField
               label="Received amount"
               type="number"
               value={received}
-              onChange={(e) => setReceived(Math.max(0, Number(e.target.value)))}
+              onChange={(e) => setReceived(e.target.value)}
             />
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -330,22 +416,30 @@ export function BillingPage() {
                 {balance >= 0 ? 'Change' : 'Due'}
               </Typography>
               <Typography color={balance >= 0 ? 'success.main' : 'error.main'} fontWeight={800}>
-                ₹ {money(Math.abs(balance))}
+                {`\u20B9 ${money(Math.abs(balance))}`}
               </Typography>
             </Box>
+
+            {missingDueCustomerDetails ? (
+              <Typography color="error.main" variant="body2">
+                Enter customer name and phone before saving a due sale.
+              </Typography>
+            ) : null}
 
             <Button
               variant="contained"
               size="large"
-              disabled={cart.length === 0}
+              disabled={!cart.length || hasStockIssue || missingDueCustomerDetails}
               onClick={async () => {
                 const totalBirds = cart.reduce((sum, item) => sum + item.qty, 0);
                 await salesApi.create({
+                  customerName: customerName.trim() || undefined,
+                  customerPhone: customerPhone.trim() || undefined,
                   paymentMethod,
                   subtotal,
-                  discount,
+                  discount: discountValue,
                   total,
-                  received,
+                  received: receivedValue,
                   balance,
                   totalQuantity: totalBirds,
                   items: cart.map((item) => {
@@ -364,8 +458,11 @@ export function BillingPage() {
                 setTodaySoldBirds(await dailyTargetDb.getTodayQuantity());
                 alert('Sale saved successfully.');
                 setCart([]);
-                setDiscount(0);
-                setReceived(0);
+                setQtyDrafts({});
+                setCustomerName('');
+                setCustomerPhone('');
+                setDiscount('');
+                setReceived('');
                 setPaymentMethod('Cash');
               }}
             >
