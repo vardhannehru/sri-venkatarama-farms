@@ -590,6 +590,39 @@ function createPostgresStorage() {
         );
       `);
       await pool.query(`
+        CREATE TABLE IF NOT EXISTS costing_reports (
+          id TEXT PRIMARY KEY,
+          report_date DATE NOT NULL UNIQUE,
+          bird_count INTEGER NOT NULL DEFAULT 0,
+          per_bird_cost NUMERIC NOT NULL DEFAULT 0,
+          total_cost NUMERIC NOT NULL DEFAULT 0,
+          feed_per_kg NUMERIC NOT NULL DEFAULT 0,
+          per_bird_feed_grams NUMERIC NOT NULL DEFAULT 0,
+          total_feed_kg NUMERIC NOT NULL DEFAULT 0,
+          total_feed_cost NUMERIC NOT NULL DEFAULT 0,
+          larva NUMERIC NOT NULL DEFAULT 0,
+          other_expenses NUMERIC NOT NULL DEFAULT 0,
+          gas NUMERIC NOT NULL DEFAULT 0,
+          daily_labour NUMERIC NOT NULL DEFAULT 0,
+          total_cost_in_day NUMERIC NOT NULL DEFAULT 0,
+          final_per_bird_cost NUMERIC NOT NULL DEFAULT 0
+        );
+      `);
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS larva_costing_reports (
+          id TEXT PRIMARY KEY,
+          report_date DATE NOT NULL UNIQUE,
+          larva_egg_grams TEXT NOT NULL DEFAULT '',
+          larva_cost NUMERIC NOT NULL DEFAULT 0,
+          ethanol_syrup NUMERIC NOT NULL DEFAULT 0,
+          broken_rice_cake NUMERIC NOT NULL DEFAULT 0,
+          others NUMERIC NOT NULL DEFAULT 0,
+          labour NUMERIC NOT NULL DEFAULT 0,
+          total NUMERIC NOT NULL DEFAULT 0,
+          quail_feed_larva NUMERIC NOT NULL DEFAULT 0
+        );
+      `);
+      await pool.query(`
         CREATE TABLE IF NOT EXISTS sales (
           id TEXT PRIMARY KEY,
           invoice_number TEXT NOT NULL UNIQUE,
@@ -636,6 +669,101 @@ function createPostgresStorage() {
           ON CONFLICT (id) DO NOTHING;
         `
       );
+
+      const seedDb = await readJsonDb();
+      const dailySeedCount = Number((await pool.query(`SELECT COUNT(*)::int AS count FROM daily_reports`)).rows[0]?.count ?? 0);
+      if (dailySeedCount === 0 && seedDb.dailyReports.length) {
+        for (const report of seedDb.dailyReports) {
+          await pool.query(
+            `
+              INSERT INTO daily_reports (
+                id, report_date, opening_birds, mortality, sick, closing_birds,
+                opening_feed_kg, used_feed_kg, received_feed_kg, closing_feed_kg,
+                per_bird_kg, per_bird_feed_cost, total_feed_cost
+              )
+              VALUES ($1, $2::date, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+              ON CONFLICT (report_date) DO NOTHING
+            `,
+            [
+              report.id,
+              report.reportDate,
+              report.openingBirds,
+              report.mortality,
+              report.sick,
+              report.closingBirds,
+              report.openingFeedKg,
+              report.usedFeedKg,
+              report.receivedFeedKg,
+              report.closingFeedKg,
+              report.perBirdKg,
+              report.perBirdFeedCost,
+              report.totalFeedCost,
+            ]
+          );
+        }
+      }
+
+      const costingSeedCount = Number((await pool.query(`SELECT COUNT(*)::int AS count FROM costing_reports`)).rows[0]?.count ?? 0);
+      if (costingSeedCount === 0 && seedDb.costingReports.length) {
+        for (const report of seedDb.costingReports) {
+          await pool.query(
+            `
+              INSERT INTO costing_reports (
+                id, report_date, bird_count, per_bird_cost, total_cost, feed_per_kg,
+                per_bird_feed_grams, total_feed_kg, total_feed_cost, larva,
+                other_expenses, gas, daily_labour, total_cost_in_day, final_per_bird_cost
+              )
+              VALUES ($1, $2::date, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+              ON CONFLICT (report_date) DO NOTHING
+            `,
+            [
+              report.id,
+              report.reportDate,
+              report.birdCount,
+              report.perBirdCost,
+              report.totalCost,
+              report.feedPerKg,
+              report.perBirdFeedGrams,
+              report.totalFeedKg,
+              report.totalFeedCost,
+              Number(report.larva ?? 0),
+              report.otherExpenses,
+              report.gas,
+              report.dailyLabour,
+              report.totalCostInDay,
+              Number(report.finalPerBirdCost ?? 0),
+            ]
+          );
+        }
+      }
+
+      const larvaSeedCount = Number((await pool.query(`SELECT COUNT(*)::int AS count FROM larva_costing_reports`)).rows[0]?.count ?? 0);
+      if (larvaSeedCount === 0 && seedDb.larvaCostingReports.length) {
+        for (const report of seedDb.larvaCostingReports) {
+          await pool.query(
+            `
+              INSERT INTO larva_costing_reports (
+                id, report_date, larva_egg_grams, larva_cost, ethanol_syrup,
+                broken_rice_cake, others, labour, total, quail_feed_larva
+              )
+              VALUES ($1, $2::date, $3, $4, $5, $6, $7, $8, $9, $10)
+              ON CONFLICT (report_date) DO NOTHING
+            `,
+            [
+              report.id,
+              report.reportDate,
+              report.larvaEggGrams,
+              report.larvaCost,
+              report.ethanolSyrup,
+              report.brokenRiceCake,
+              report.others,
+              report.labour,
+              report.total,
+              report.quailFeedLarva,
+            ]
+          );
+        }
+      }
     },
     async authenticateUser(username, password) {
       const result = await pool.query(
@@ -874,10 +1002,56 @@ function createPostgresStorage() {
       }));
     },
     async listCostingReports() {
-      return [];
+      const result = await pool.query(
+        `
+          SELECT
+            id, report_date, bird_count, per_bird_cost, total_cost, feed_per_kg,
+            per_bird_feed_grams, total_feed_kg, total_feed_cost, larva,
+            other_expenses, gas, daily_labour, total_cost_in_day, final_per_bird_cost
+          FROM costing_reports
+          ORDER BY report_date ASC
+        `
+      );
+      return result.rows.map((row) => ({
+        id: row.id,
+        reportDate: String(row.report_date).slice(0, 10),
+        birdCount: Number(row.bird_count ?? 0),
+        perBirdCost: Number(row.per_bird_cost ?? 0),
+        totalCost: Number(row.total_cost ?? 0),
+        feedPerKg: Number(row.feed_per_kg ?? 0),
+        perBirdFeedGrams: Number(row.per_bird_feed_grams ?? 0),
+        totalFeedKg: Number(row.total_feed_kg ?? 0),
+        totalFeedCost: Number(row.total_feed_cost ?? 0),
+        larva: Number(row.larva ?? 0),
+        otherExpenses: Number(row.other_expenses ?? 0),
+        gas: Number(row.gas ?? 0),
+        dailyLabour: Number(row.daily_labour ?? 0),
+        totalCostInDay: Number(row.total_cost_in_day ?? 0),
+        finalPerBirdCost: Number(row.final_per_bird_cost ?? 0),
+      }));
     },
     async listLarvaCostingReports() {
-      return [];
+      const result = await pool.query(
+        `
+          SELECT
+            id, report_date, larva_egg_grams, larva_cost, ethanol_syrup,
+            broken_rice_cake, others, labour, total, quail_feed_larva
+          FROM larva_costing_reports
+          ORDER BY report_date ASC
+        `
+      );
+      return result.rows.map((row) => ({
+        id: row.id,
+        reportDate: String(row.report_date).slice(0, 10),
+        larvaEggGrams: row.larva_egg_grams ?? '',
+        larvaCost: Number(row.larva_cost ?? 0),
+        ethanolSyrup: Number(row.ethanol_syrup ?? 0),
+        brokenRiceCake: Number(row.broken_rice_cake ?? 0),
+        others: Number(row.others ?? 0),
+        labour: Number(row.labour ?? 0),
+        total: Number(row.total ?? 0),
+        quailFeedLarva: Number(row.quail_feed_larva ?? 0),
+      }));
     },
     async upsertDailyReport(report) {
       await pool.query(
