@@ -985,7 +985,7 @@ function createPostgresStorage() {
           ORDER BY report_date ASC
         `
       );
-      return result.rows.map((row) => ({
+      const rows = result.rows.map((row) => ({
         id: row.id,
         reportDate: String(row.report_date).slice(0, 10),
         openingBirds: Number(row.opening_birds ?? 0),
@@ -1000,6 +1000,11 @@ function createPostgresStorage() {
         perBirdFeedCost: Number(row.per_bird_feed_cost ?? 0),
         totalFeedCost: Number(row.total_feed_cost ?? 0),
       }));
+      if (rows.length) {
+        return rows;
+      }
+      const db = await readJsonDb();
+      return [...(db.dailyReports ?? [])].sort((a, b) => String(a.reportDate).localeCompare(String(b.reportDate)));
     },
     async listCostingReports() {
       const result = await pool.query(
@@ -1012,7 +1017,7 @@ function createPostgresStorage() {
           ORDER BY report_date ASC
         `
       );
-      return result.rows.map((row) => ({
+      const rows = result.rows.map((row) => ({
         id: row.id,
         reportDate: String(row.report_date).slice(0, 10),
         birdCount: Number(row.bird_count ?? 0),
@@ -1029,6 +1034,11 @@ function createPostgresStorage() {
         totalCostInDay: Number(row.total_cost_in_day ?? 0),
         finalPerBirdCost: Number(row.final_per_bird_cost ?? 0),
       }));
+      if (rows.length) {
+        return rows;
+      }
+      const db = await readJsonDb();
+      return [...(db.costingReports ?? [])].sort((a, b) => String(a.reportDate).localeCompare(String(b.reportDate)));
     },
     async listLarvaCostingReports() {
       const result = await pool.query(
@@ -1040,7 +1050,7 @@ function createPostgresStorage() {
           ORDER BY report_date ASC
         `
       );
-      return result.rows.map((row) => ({
+      const rows = result.rows.map((row) => ({
         id: row.id,
         reportDate: String(row.report_date).slice(0, 10),
         larvaEggGrams: row.larva_egg_grams ?? '',
@@ -1052,6 +1062,11 @@ function createPostgresStorage() {
         total: Number(row.total ?? 0),
         quailFeedLarva: Number(row.quail_feed_larva ?? 0),
       }));
+      if (rows.length) {
+        return rows;
+      }
+      const db = await readJsonDb();
+      return [...(db.larvaCostingReports ?? [])].sort((a, b) => String(a.reportDate).localeCompare(String(b.reportDate)));
     },
     async upsertDailyReport(report) {
       await pool.query(
