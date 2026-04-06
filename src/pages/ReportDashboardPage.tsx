@@ -4,6 +4,7 @@ import type { CostingReportRecord, DailyReportRecord, LarvaCostingRecord } from 
 import { costingReportsApi } from '../lib/costingReportsApi';
 import { dailyReportsApi } from '../lib/dailyReportsApi';
 import { larvaCostingApi } from '../lib/larvaCostingApi';
+import { reportSeedApi } from '../lib/reportSeedApi';
 
 const importedSales = [
   { reportDate: '2026-04-03', quailBirdsSold: 17, birdSellPrice: 50, eggsSold: 0, eggSellPrice: 4 },
@@ -70,10 +71,11 @@ export function ReportDashboardPage() {
       dailyReportsApi.list().catch(() => []),
       costingReportsApi.list().catch(() => []),
       larvaCostingApi.list().catch(() => []),
-    ]).then(([dailyRows, costingRows, larvaRows]) => {
-      setDailyReports(dailyRows);
-      setCostingReports(costingRows);
-      setLarvaCostingReports(larvaRows);
+    ]).then(async ([dailyRows, costingRows, larvaRows]) => {
+      const seed = await reportSeedApi.get();
+      setDailyReports(dailyRows.length ? dailyRows : seed.dailyReports);
+      setCostingReports(costingRows.length ? costingRows : seed.costingReports);
+      setLarvaCostingReports(larvaRows.length ? larvaRows : seed.larvaCostingReports);
     });
   }, []);
 

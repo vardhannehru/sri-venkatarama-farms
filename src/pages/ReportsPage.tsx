@@ -11,6 +11,7 @@ import { expensesApi } from '../lib/expensesApi';
 import { larvaCostingApi } from '../lib/larvaCostingApi';
 import { mortalitiesApi } from '../lib/mortalitiesApi';
 import { purchasesApi } from '../lib/purchasesApi';
+import { reportSeedApi } from '../lib/reportSeedApi';
 import { salesApi } from '../lib/salesApi';
 
 function money(n: number, digits = 2) {
@@ -154,10 +155,11 @@ export function ReportsPage() {
       mortalitiesApi.list().catch(() => []),
       salesApi.list().catch(() => []),
       expensesApi.list().catch(() => []),
-    ]).then(([costingReportRows, larvaRows, dailyReportRows, purchaseRows, mortalityRows, saleRows, expenseRows]) => {
-      setCostingReports(costingReportRows);
-      setLarvaCostingReports(larvaRows);
-      setStoredReports(dailyReportRows);
+    ]).then(async ([costingReportRows, larvaRows, dailyReportRows, purchaseRows, mortalityRows, saleRows, expenseRows]) => {
+      const seed = await reportSeedApi.get();
+      setCostingReports(costingReportRows.length ? costingReportRows : seed.costingReports);
+      setLarvaCostingReports(larvaRows.length ? larvaRows : seed.larvaCostingReports);
+      setStoredReports(dailyReportRows.length ? dailyReportRows : seed.dailyReports);
       setPurchases(purchaseRows);
       setMortalities(mortalityRows);
       setSales(saleRows);
