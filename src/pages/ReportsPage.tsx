@@ -4,10 +4,11 @@ import ExcelIcon from '@mui/icons-material/GridOn';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useEffect, useMemo, useState } from 'react';
 import ExcelJS from 'exceljs';
-import type { CostingReportRecord, DailyReportRecord, ExpenseRecord, MortalityRecord, PurchaseRecord, SaleRecord } from '../types';
+import type { CostingReportRecord, DailyReportRecord, ExpenseRecord, LarvaCostingRecord, MortalityRecord, PurchaseRecord, SaleRecord } from '../types';
 import { costingReportsApi } from '../lib/costingReportsApi';
 import { dailyReportsApi } from '../lib/dailyReportsApi';
 import { expensesApi } from '../lib/expensesApi';
+import { larvaCostingApi } from '../lib/larvaCostingApi';
 import { mortalitiesApi } from '../lib/mortalitiesApi';
 import { purchasesApi } from '../lib/purchasesApi';
 import { salesApi } from '../lib/salesApi';
@@ -42,7 +43,8 @@ function buildDailyReports(
   purchases: PurchaseRecord[],
   mortalities: MortalityRecord[],
   sales: SaleRecord[],
-  expenses: ExpenseRecord[]
+  expenses: ExpenseRecord[],
+  storedReports: DailyReportRecord[]
 ): DailyReportRecord[] {
   const allDates = new Set<string>();
 
@@ -51,9 +53,14 @@ function buildDailyReports(
   for (const row of sales) allDates.add(dateKey(row.createdAt));
   for (const row of expenses) allDates.add(dateKey(row.createdAt));
 
-  const sortedDates = [...allDates].sort();
-  let previousClosingBirds = 0;
-  let previousClosingFeedKg = 0;
+  const latestStoredReport = [...storedReports]
+    .sort((a, b) => String(a.reportDate).localeCompare(String(b.reportDate)))
+    .at(-1);
+  const sortedDates = [...allDates]
+    .sort()
+    .filter((reportDate) => !latestStoredReport || String(reportDate) > String(latestStoredReport.reportDate));
+  let previousClosingBirds = Number(latestStoredReport?.closingBirds ?? 0);
+  let previousClosingFeedKg = Number(latestStoredReport?.closingFeedKg ?? 0);
 
   return sortedDates.map((reportDate) => {
     const purchasedBirds = purchases
@@ -131,6 +138,7 @@ function excelDate(reportDate: string) {
 
 export function ReportsPage() {
   const [costingReports, setCostingReports] = useState<CostingReportRecord[]>([]);
+  const [larvaCostingReports, setLarvaCostingReports] = useState<LarvaCostingRecord[]>([]);
   const [storedReports, setStoredReports] = useState<DailyReportRecord[]>([]);
   const [purchases, setPurchases] = useState<PurchaseRecord[]>([]);
   const [mortalities, setMortalities] = useState<MortalityRecord[]>([]);
@@ -140,13 +148,15 @@ export function ReportsPage() {
   useEffect(() => {
     Promise.all([
       costingReportsApi.list().catch(() => []),
+      larvaCostingApi.list().catch(() => []),
       dailyReportsApi.list().catch(() => []),
       purchasesApi.list().catch(() => []),
       mortalitiesApi.list().catch(() => []),
       salesApi.list().catch(() => []),
       expensesApi.list().catch(() => []),
-    ]).then(([costingReportRows, dailyReportRows, purchaseRows, mortalityRows, saleRows, expenseRows]) => {
+    ]).then(([costingReportRows, larvaRows, dailyReportRows, purchaseRows, mortalityRows, saleRows, expenseRows]) => {
       setCostingReports(costingReportRows);
+      setLarvaCostingReports(larvaRows);
       setStoredReports(dailyReportRows);
       setPurchases(purchaseRows);
       setMortalities(mortalityRows);
@@ -156,7 +166,7 @@ export function ReportsPage() {
   }, []);
 
   const rows = useMemo(() => {
-    const computedRows = buildDailyReports(purchases, mortalities, sales, expenses);
+    const computedRows = buildDailyReports(purchases, mortalities, sales, expenses, storedReports);
     const merged = new Map<string, DailyReportRecord>();
 
     for (const row of computedRows) {
@@ -282,7 +292,7 @@ export function ReportsPage() {
       'Total Feed Cost',
     ];
 
-    const csvRows = rows.map((row) => [
+      const csvRows = rows.map((row) => [
       fmtDate(row.reportDate),
       row.openingBirds,
       row.mortality,
@@ -325,6 +335,7 @@ export function ReportsPage() {
       { width: 11 },
       { width: 11 },
       { width: 12 },
+      { width: 11 },
       { width: 12 },
       { width: 10 },
       { width: 12 },
@@ -332,7 +343,7 @@ export function ReportsPage() {
       { width: 10 },
     ];
 
-    sheet.mergeCells('A1:M1');
+    sheet.mergeCells('A1:N1');
     sheet.getCell('A1').value = 'SVR INTEGRATED FARMING';
     sheet.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' };
     sheet.getCell('A1').font = { bold: true, size: 16 };
@@ -348,7 +359,7 @@ export function ReportsPage() {
       right: { style: 'thin' },
     };
 
-    sheet.mergeCells('A2:M2');
+    sheet.mergeCells('A2:N2');
     sheet.getCell('A2').value = 'TOTAL QUAIL COSTING';
     sheet.getCell('A2').alignment = { horizontal: 'center', vertical: 'middle' };
     sheet.getCell('A2').font = { bold: true, size: 14 };
@@ -374,6 +385,7 @@ export function ReportsPage() {
       'PER BIRD FEED IN GRMS',
       'TOTAL FEED IN KGS',
       'TOTAL COST FEED',
+      'LARVA',
       'OTHER EXPENSES',
       'GAS',
       'DAILY LABOUR',
@@ -394,7 +406,7 @@ export function ReportsPage() {
     });
     headerRow.height = 42;
 
-    const currencyCols = [3, 4, 5, 8, 9, 10, 11, 12, 13];
+    const currencyCols = [3, 4, 5, 8, 9, 10, 11, 12, 13, 14];
 
     costingReports.forEach((row, index) => {
       const sheetRow = sheet.getRow(5 + index);
@@ -408,6 +420,7 @@ export function ReportsPage() {
         row.perBirdFeedGrams,
         row.totalFeedKg,
         row.totalFeedCost,
+        row.larva ?? 0,
         row.otherExpenses,
         row.gas,
         row.dailyLabour,
@@ -428,14 +441,15 @@ export function ReportsPage() {
         }
       });
 
-      sheetRow.getCell(12).font = { color: { argb: 'FFFF0000' } };
-      sheetRow.getCell(13).font = { color: { argb: 'FF000000' } };
+      sheetRow.getCell(13).font = { color: { argb: 'FFFF0000' } };
+      sheetRow.getCell(14).font = { color: { argb: 'FF000000' } };
     });
 
     const totalRowNumber = 5 + costingReports.length + 2;
     const totalRow = sheet.getRow(totalRowNumber);
     const totalFeedKg = costingReports.reduce((sum, row) => sum + row.totalFeedKg, 0);
     const totalFeedCost = costingReports.reduce((sum, row) => sum + row.totalFeedCost, 0);
+    const totalLarva = costingReports.reduce((sum, row) => sum + Number(row.larva ?? 0), 0);
     const totalOtherExpenses = costingReports.reduce((sum, row) => sum + row.otherExpenses, 0);
     const totalGas = costingReports.reduce((sum, row) => sum + row.gas, 0);
     const totalDailyLabour = costingReports.reduce((sum, row) => sum + row.dailyLabour, 0);
@@ -446,11 +460,12 @@ export function ReportsPage() {
     totalRow.getCell(2).value = 'TOTAL :';
     totalRow.getCell(7).value = totalFeedKg;
     totalRow.getCell(8).value = totalFeedCost;
-    totalRow.getCell(9).value = totalOtherExpenses;
-    totalRow.getCell(10).value = totalGas;
-    totalRow.getCell(11).value = totalDailyLabour;
-    totalRow.getCell(12).value = totalCostInDay;
-    totalRow.getCell(13).value = totalPerBirdCost;
+    totalRow.getCell(9).value = totalLarva;
+    totalRow.getCell(10).value = totalOtherExpenses;
+    totalRow.getCell(11).value = totalGas;
+    totalRow.getCell(12).value = totalDailyLabour;
+    totalRow.getCell(13).value = totalCostInDay;
+    totalRow.getCell(14).value = totalPerBirdCost;
 
     totalRow.eachCell((cell, colNumber) => {
       cell.font = { bold: true, color: { argb: 'FFFF0000' } };
@@ -459,7 +474,7 @@ export function ReportsPage() {
         cell.numFmt = '"₹"#,##0.00';
       }
     });
-    totalRow.getCell(13).font = { bold: true, color: { argb: 'FF000000' } };
+    totalRow.getCell(14).font = { bold: true, color: { argb: 'FF000000' } };
 
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], {
@@ -474,6 +489,23 @@ export function ReportsPage() {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
+
+  const larvaRowsByMonth = useMemo(() => {
+    const grouped = new Map<string, LarvaCostingRecord[]>();
+    for (const row of larvaCostingReports) {
+      const key = String(row.reportDate).slice(0, 7);
+      const current = grouped.get(key) ?? [];
+      current.push(row);
+      grouped.set(key, current);
+    }
+    return [...grouped.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([month, monthRows]) => ({
+        month,
+        label: monthLabel(`${month}-01`),
+        rows: monthRows.sort((a, b) => String(a.reportDate).localeCompare(String(b.reportDate))),
+      }));
+  }, [larvaCostingReports]);
 
   return (
     <Box sx={{ display: 'grid', gap: 2 }}>
@@ -647,7 +679,7 @@ export function ReportsPage() {
                         <Box
                           sx={{
                             display: 'grid',
-                            gridTemplateColumns: '1.05fr 0.95fr 0.95fr 1fr 0.95fr 1.05fr 0.95fr 1fr 0.95fr 0.8fr 0.9fr 1.05fr',
+                            gridTemplateColumns: '1.05fr 0.95fr 0.95fr 1fr 0.95fr 1.05fr 0.95fr 1fr 0.95fr 0.95fr 0.8fr 0.9fr 1.05fr 0.9fr',
                             gap: 1,
                             p: 1.2,
                             borderRadius: 3,
@@ -665,10 +697,12 @@ export function ReportsPage() {
                           <Box>Per Bird Feed in GRMS</Box>
                           <Box>Total Feed in KGS</Box>
                           <Box>Total Cost Feed</Box>
+                          <Box>Larva</Box>
                           <Box>Other Expenses</Box>
                           <Box>Gas</Box>
                           <Box>Daily Labour</Box>
                           <Box>Total Cost in Day</Box>
+                          <Box>Per Bird Cost</Box>
                         </Box>
 
                         <Stack spacing={1} sx={{ mt: 1 }}>
@@ -677,7 +711,7 @@ export function ReportsPage() {
                               key={row.id}
                               sx={{
                                 display: 'grid',
-                                gridTemplateColumns: '1.05fr 0.95fr 0.95fr 1fr 0.95fr 1.05fr 0.95fr 1fr 0.95fr 0.8fr 0.9fr 1.05fr',
+                                gridTemplateColumns: '1.05fr 0.95fr 0.95fr 1fr 0.95fr 1.05fr 0.95fr 1fr 0.95fr 0.95fr 0.8fr 0.9fr 1.05fr 0.9fr',
                                 gap: 1,
                                 p: 1.2,
                                 borderRadius: 3,
@@ -694,10 +728,12 @@ export function ReportsPage() {
                               <Box>{money(row.perBirdFeedGrams, 2)}</Box>
                               <Box>{money(row.totalFeedKg, 2)}</Box>
                               <Box>{money(row.totalFeedCost, 2)}</Box>
+                              <Box>{money(row.larva ?? 0, 2)}</Box>
                               <Box>{money(row.otherExpenses, 2)}</Box>
                               <Box>{money(row.gas, 2)}</Box>
                               <Box>{money(row.dailyLabour, 2)}</Box>
                               <Box>{money(row.totalCostInDay, 2)}</Box>
+                              <Box>{money(row.finalPerBirdCost ?? 0, 2)}</Box>
                             </Box>
                           ))}
                         </Stack>
@@ -793,6 +829,93 @@ export function ReportsPage() {
                           <Box>{money(row.totalFeedCost, 2)}</Box>
                           <Box>{money(row.totalCostInMonth, 2)}</Box>
                         </Box>
+                      </Box>
+                    </Box>
+                  </AccordionDetails>
+                </Accordion>
+              ))}
+            </Stack>
+          )}
+        </AccordionDetails>
+      </Accordion>
+
+      <Accordion sx={{ borderRadius: '16px !important', overflow: 'hidden' }}>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Stack spacing={0.35}>
+            <Typography fontWeight={800}>Larva costing</Typography>
+            <Typography variant="body2" color="text.secondary">
+              Open only when you want to see the larva costing register.
+            </Typography>
+          </Stack>
+        </AccordionSummary>
+        <AccordionDetails>
+          {!larvaRowsByMonth.length ? (
+            <Typography color="text.secondary">No larva costing report rows yet.</Typography>
+          ) : (
+            <Stack spacing={1.2}>
+              {larvaRowsByMonth.map((monthGroup) => (
+                <Accordion key={monthGroup.month} sx={{ borderRadius: '14px !important', overflow: 'hidden', boxShadow: 'none', border: '1px solid rgba(15,23,42,0.08)' }}>
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Stack spacing={0.25}>
+                      <Typography fontWeight={800}>{monthGroup.label}</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {monthGroup.rows.length} larva entries
+                      </Typography>
+                    </Stack>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Box sx={{ overflowX: 'auto' }}>
+                      <Box sx={{ minWidth: 1320 }}>
+                        <Box
+                          sx={{
+                            display: 'grid',
+                            gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr',
+                            gap: 1,
+                            p: 1.2,
+                            borderRadius: 3,
+                            bgcolor: '#34ff17',
+                            color: '#0f172a',
+                            fontWeight: 900,
+                            textTransform: 'uppercase',
+                          }}
+                        >
+                          <Box>Date</Box>
+                          <Box>Larva Egg in Grms</Box>
+                          <Box>Larva Cost</Box>
+                          <Box>Ethonol Syrup</Box>
+                          <Box>Broken Rice Cake</Box>
+                          <Box>Others</Box>
+                          <Box>Labour</Box>
+                          <Box>Total</Box>
+                          <Box>Quail Feed Larva</Box>
+                        </Box>
+                        <Stack spacing={1} sx={{ mt: 1 }}>
+                          {monthGroup.rows.map((row) => (
+                            <Box
+                              key={row.id}
+                              sx={{
+                                display: 'grid',
+                                gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr',
+                                gap: 1,
+                                p: 1.2,
+                                borderRadius: 3,
+                                border: '1px solid rgba(15,23,42,0.08)',
+                                alignItems: 'center',
+                                background: 'rgba(255,255,255,0.98)',
+                              }}
+                            >
+                              <Box>{fmtDate(row.reportDate)}</Box>
+                              <Box>{row.larvaEggGrams || '-'}</Box>
+                              <Box>{money(row.larvaCost, 2)}</Box>
+                              <Box>{money(row.ethanolSyrup, 2)}</Box>
+                              <Box>{money(row.brokenRiceCake, 2)}</Box>
+                              <Box>{money(row.others, 2)}</Box>
+                              <Box>{money(row.labour, 2)}</Box>
+                              <Box>{money(row.total, 2)}</Box>
+                              <Box>{money(row.quailFeedLarva, 2)}</Box>
+                            </Box>
+                          ))}
+                        </Stack>
                       </Box>
                     </Box>
                   </AccordionDetails>

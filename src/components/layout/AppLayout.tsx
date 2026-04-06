@@ -28,7 +28,6 @@ import Inventory2Icon from '@mui/icons-material/Inventory2';
 import ShoppingBasketIcon from '@mui/icons-material/ShoppingBasket';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import PeopleIcon from '@mui/icons-material/People';
-import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import SettingsIcon from '@mui/icons-material/Settings';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -36,6 +35,9 @@ import SearchIcon from '@mui/icons-material/Search';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import AutoGraphIcon from '@mui/icons-material/AutoGraph';
+import GrassIcon from '@mui/icons-material/Grass';
+import EngineeringIcon from '@mui/icons-material/Engineering';
+import BoltIcon from '@mui/icons-material/Bolt';
 import { useEffect, useMemo, useState } from 'react';
 import { getCurrentUser, logout } from '../../lib/auth';
 import type { UserRole } from '../../types';
@@ -69,7 +71,10 @@ const pageMeta: Record<string, { title: string; subtitle: string }> = {
   '/products': { title: 'Products', subtitle: 'Manage inventory, pricing, and stock levels.' },
   '/mortality': { title: 'Mortality', subtitle: 'Record bird deaths and sick birds so daily counts stay accurate.' },
   '/customers': { title: 'Customers', subtitle: 'View and manage your customer records.' },
-  '/expenses': { title: 'Expenses', subtitle: 'Track outgoing costs and operating expenses.' },
+  '/feed': { title: 'Feed', subtitle: 'Enter feed stock, feed usage, and feed cost separately.' },
+  '/labour': { title: 'Labour', subtitle: 'Record labour entries separately from the other farm costs.' },
+  '/electricity': { title: 'Electricity', subtitle: 'Record electricity charges separately from feed and labour.' },
+  '/report-dashboard': { title: 'Report Dashboard', subtitle: 'See imported Excel report data separately from live app activity.' },
   '/reports': { title: 'Daily Report', subtitle: 'Automatically calculated from purchases, sales, mortality, and feed expenses.' },
   '/settings': { title: 'Settings', subtitle: 'Adjust app configuration and preferences.' },
 };
@@ -93,8 +98,11 @@ export function AppLayout() {
       { label: 'Purchases', path: '/purchases', icon: <ShoppingBasketIcon />, section: 'main', roles: ['admin'] },
       { label: 'Products', path: '/products', icon: <Inventory2Icon />, section: 'main', roles: ['admin'] },
       { label: 'Mortality', path: '/mortality', icon: <WarningAmberIcon />, section: 'main', roles: ['admin'] },
+      { label: 'Feed', path: '/feed', icon: <GrassIcon />, section: 'management', roles: ['admin', 'salesman'] },
+      { label: 'Labour', path: '/labour', icon: <EngineeringIcon />, section: 'management', roles: ['admin', 'salesman'] },
+      { label: 'Electricity', path: '/electricity', icon: <BoltIcon />, section: 'management', roles: ['admin', 'salesman'] },
       { label: 'Customers', path: '/customers', icon: <PeopleIcon />, section: 'management', roles: ['admin'] },
-      { label: 'Expenses', path: '/expenses', icon: <ReceiptLongIcon />, section: 'management', roles: ['admin'] },
+      { label: 'Report Dashboard', path: '/report-dashboard', icon: <AutoGraphIcon />, section: 'management', roles: ['admin'] },
       { label: 'Daily Report', path: '/reports', icon: <AssessmentIcon />, section: 'management', roles: ['admin'] },
       { label: 'Settings', path: '/settings', icon: <SettingsIcon />, section: 'management', roles: ['admin'] },
     ],

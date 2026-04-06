@@ -1,16 +1,14 @@
 import { Alert, Snackbar, alpha, Box, Button, Card, CardContent, Chip, Divider, Stack, TextField, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
-import type { CostingReportRecord, DailyReportRecord, ExpenseRecord, MortalityRecord, Product, PurchaseRecord, SaleRecord } from '../types';
+import type { ExpenseRecord, MortalityRecord, Product, PurchaseRecord, SaleRecord } from '../types';
 import { hasRole } from '../lib/auth';
-import { costingReportsApi } from '../lib/costingReportsApi';
 import { mockProductsDb } from '../lib/mockDb';
 import { dailyTargetDb } from '../lib/dailyTargetDb';
-import { dailyReportsApi } from '../lib/dailyReportsApi';
 import { salesApi } from '../lib/salesApi';
 import { purchasesApi } from '../lib/purchasesApi';
 import { mortalitiesApi } from '../lib/mortalitiesApi';
 import { expensesApi } from '../lib/expensesApi';
-import { getCurrentLiveBirdCost, getCurrentProductCost, getExpenseCostPerBird, getProfitPerBird, getSaleEstimatedProfit } from '../lib/costing';
+import { getCurrentLiveBirdCost, getCurrentProductCost, getExpenseCostPerBird, getProfitPerBird } from '../lib/costing';
 
 function money(n: number) {
   return new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }).format(n);
@@ -194,15 +192,13 @@ export function DashboardPage() {
   const [purchases, setPurchases] = useState<PurchaseRecord[]>([]);
   const [mortalities, setMortalities] = useState<MortalityRecord[]>([]);
   const [expenses, setExpenses] = useState<ExpenseRecord[]>([]);
-  const [dailyReports, setDailyReports] = useState<DailyReportRecord[]>([]);
-  const [costingReports, setCostingReports] = useState<CostingReportRecord[]>([]);
   const [dailyTarget, setDailyTarget] = useState<number>(0);
   const [todaySoldBirds, setTodaySoldBirds] = useState<number>(0);
   const [targetInput, setTargetInput] = useState<string>('');
   const [showDuePopup, setShowDuePopup] = useState(false);
 
   async function loadDashboard() {
-    const [productRows, target, todayQuantity, saleRows, purchaseRows, mortalityRows, expenseRows, dailyReportRows, costingReportRows] =
+    const [productRows, target, todayQuantity, saleRows, purchaseRows, mortalityRows, expenseRows] =
       await Promise.all([
         mockProductsDb.list().catch(() => []),
         dailyTargetDb.getTarget().catch(() => ({ quantity: 0 })),
@@ -211,8 +207,6 @@ export function DashboardPage() {
         purchasesApi.list().catch(() => []),
         mortalitiesApi.list().catch(() => []),
         expensesApi.list().catch(() => []),
-        dailyReportsApi.list().catch(() => []),
-        costingReportsApi.list().catch(() => []),
       ]);
 
     setProducts(productRows);
@@ -223,67 +217,21 @@ export function DashboardPage() {
     setPurchases(purchaseRows);
     setMortalities(mortalityRows);
     setExpenses(expenseRows);
-    setDailyReports(dailyReportRows);
-    setCostingReports(costingReportRows);
   }
 
   useEffect(() => {
     void loadDashboard();
   }, []);
 
-  const latestDailyReport = useMemo(
-    () => [...dailyReports].sort((a, b) => String(a.reportDate).localeCompare(String(b.reportDate))).at(-1),
-    [dailyReports]
-  );
-  const latestCostingReport = useMemo(
-    () => [...costingReports].sort((a, b) => String(a.reportDate).localeCompare(String(b.reportDate))).at(-1),
-    [costingReports]
-  );
-  const totalCostingSpent = useMemo(
-    () => costingReports.reduce((sum, row) => sum + row.totalCost + row.totalCostInDay, 0),
-    [costingReports]
-  );
-  const reportBasedCurrentBirdCost =
-    latestDailyReport && latestDailyReport.closingBirds > 0
-      ? totalCostingSpent / latestDailyReport.closingBirds
-      : 0;
-  const reportBasedDailyCostPerBird =
-    latestCostingReport && latestCostingReport.birdCount > 0 ? latestCostingReport.totalCostInDay / latestCostingReport.birdCount : 0;
-
-  const inventoryStock = products.length
-    ? products.reduce((sum, product) => sum + product.stock, 0)
-    : Number(latestDailyReport?.closingBirds ?? 0);
-  const inventoryValue = products.length
-    ? products.reduce((sum, product) => sum + product.stock * product.sellPrice, 0)
-    : inventoryStock * reportBasedCurrentBirdCost;
+  const inventoryStock = products.reduce((sum, product) => sum + product.stock, 0);
+  const inventoryValue = products.reduce((sum, product) => sum + product.stock * product.sellPrice, 0);
   const totalAmountSold = sales.reduce((sum, sale) => sum + sale.total, 0);
   const totalDueAmount = sales.reduce((sum, sale) => sum + Math.max(0, sale.total - sale.received), 0);
-  const totalPurchasedBirds = purchases.length
-    ? purchases.reduce((sum, row) => sum + row.quantity, 0)
-    : Number(dailyReports[0]?.openingBirds ?? 0);
-  const totalMortalityBirds = mortalities.length
-    ? mortalities.reduce((sum, row) => sum + row.quantity, 0)
-    : dailyReports.reduce((sum, row) => sum + row.mortality, 0);
-  const totalExpenseAmount = expenses.length
-    ? expenses.reduce((sum, row) => sum + row.amount, 0)
-    : costingReports.reduce((sum, row) => sum + row.totalCostInDay, 0);
-  const expenseCostPerBird = products.length
-    ? getExpenseCostPerBird(products, purchases, mortalities, totalExpenseAmount)
-    : reportBasedDailyCostPerBird;
-  const currentLiveBirdCost = products.length
-    ? getCurrentLiveBirdCost(products, purchases, mortalities, totalExpenseAmount)
-    : reportBasedCurrentBirdCost;
-  const totalCashCollection = sales
-    .filter((sale) => paymentGroupFor(sale.paymentMethod, sale.paymentGroup) === 'Cash')
-    .reduce((sum, sale) => sum + sale.total, 0);
-  const totalBankCollection = sales
-    .filter((sale) => paymentGroupFor(sale.paymentMethod, sale.paymentGroup) === 'Bank')
-    .reduce((sum, sale) => sum + sale.total, 0);
-  const estimatedProfit = sales.reduce(
-    (sum, sale) => sum + getSaleEstimatedProfit(sale, products, purchases, mortalities, totalExpenseAmount),
-    0
-  );
-
+  const totalPurchasedBirds = purchases.reduce((sum, row) => sum + row.quantity, 0);
+  const totalMortalityBirds = mortalities.reduce((sum, row) => sum + row.quantity, 0);
+  const totalExpenseAmount = expenses.reduce((sum, row) => sum + row.amount, 0);
+  const expenseCostPerBird = getExpenseCostPerBird(products, purchases, mortalities, totalExpenseAmount);
+  const currentLiveBirdCost = getCurrentLiveBirdCost(products, purchases, mortalities, totalExpenseAmount);
   const inventoryDetails = useMemo(
     () =>
       products.length
@@ -295,22 +243,8 @@ export function DashboardPage() {
               stockValue: product.stock * product.sellPrice,
             }))
             .sort((a, b) => b.stockValue - a.stockValue)
-        : latestDailyReport
-          ? [
-              {
-                id: latestDailyReport.id,
-                name: 'Quail Bird Live',
-                category: 'Live Bird',
-                costPrice: latestCostingReport?.perBirdCost ?? 0,
-                sellPrice: 0,
-                stock: latestDailyReport.closingBirds,
-                currentCost: reportBasedCurrentBirdCost,
-                profitPerBird: 0,
-                stockValue: latestDailyReport.closingBirds * reportBasedCurrentBirdCost,
-              },
-            ]
-          : [],
-    [products, purchases, mortalities, totalExpenseAmount, latestDailyReport, latestCostingReport, reportBasedCurrentBirdCost]
+        : [],
+    [products, purchases, mortalities, totalExpenseAmount]
   );
   const primaryLiveBird = useMemo(
     () =>
@@ -341,7 +275,6 @@ export function DashboardPage() {
   }, [sales]);
   const topProductAmounts = topProducts.slice(0, 3);
   const maxTopAmount = topProducts[0]?.amount ?? 1;
-
   useEffect(() => {
     setShowDuePopup(totalDueAmount > 0);
   }, [totalDueAmount]);
@@ -396,7 +329,7 @@ export function DashboardPage() {
         <KpiCard
           label="Purchased Birds"
           value={`${totalPurchasedBirds}`}
-          sub={products.length || purchases.length ? 'Birds entered from purchases' : 'Opening birds from imported report'}
+          sub={purchases.length ? 'Birds entered from purchases' : 'No purchase records yet'}
           tone="inventory"
         />
         <KpiCard label="Bird Deaths" value={`${totalMortalityBirds}`} sub="Recorded mortality count" tone="danger" />
@@ -410,20 +343,14 @@ export function DashboardPage() {
         <KpiCard
           label="Current Bird Cost"
           value={`\u20B9 ${money(currentLiveBirdCost)}`}
-          sub={products.length ? 'Purchase cost plus feed and farm expenses' : 'Derived from imported March costing report'}
+          sub={products.length ? 'Purchase cost plus feed and farm expenses' : 'Add products and expenses to calculate'}
           tone="inventory"
         />
         <KpiCard
           label="Single Bird Profit"
           value={`\u20B9 ${money(primaryLiveBird?.profitPerBird ?? 0)}`}
-          sub={products.length ? (primaryLiveBird ? `${primaryLiveBird.name} after current cost` : 'Add a live bird product first') : 'Selling price not available in imported report'}
+          sub={products.length ? (primaryLiveBird ? `${primaryLiveBird.name} after current cost` : 'Add a live bird product first') : 'Add live bird pricing first'}
           tone={(primaryLiveBird?.profitPerBird ?? 0) >= 0 ? 'profit' : 'danger'}
-        />
-        <KpiCard
-          label="Estimated Profit"
-          value={`\u20B9 ${money(estimatedProfit)}`}
-          sub="Sales minus current estimated bird cost"
-          tone={estimatedProfit >= 0 ? 'profit' : 'danger'}
         />
         <KpiCard
           label="Due Amount"
@@ -431,8 +358,6 @@ export function DashboardPage() {
           sub={totalDueAmount > 0 ? 'Pending amount to collect. Follow up with customers.' : 'No pending due'}
           warning={totalDueAmount > 0}
         />
-        <KpiCard label="Cash Collection" value={`\u20B9 ${money(totalCashCollection)}`} sub="Cash payment total" tone="cash" />
-        <KpiCard label="Bank Collection" value={`\u20B9 ${money(totalBankCollection)}`} sub="UPI and card total" tone="bank" />
       </Box>
 
       <Box
@@ -447,9 +372,7 @@ export function DashboardPage() {
           label="Inventory"
           value={`\u20B9 ${money(inventoryValue)}`}
           sub={
-            products.length
-              ? `${inventoryStock} total stock units in hand`
-              : `${inventoryStock} live birds in hand from latest imported report`
+            products.length ? `${inventoryStock} total stock units in hand` : 'No live inventory entered yet'
           }
           tone="inventory"
         />
@@ -466,7 +389,7 @@ export function DashboardPage() {
               caption={
                 products.length || sales.length
                   ? `Feed, labour, and electricity are adding \u20B9 ${money(expenseCostPerBird)} cost per live bird right now.`
-                  : `Imported costing report shows \u20B9 ${money(expenseCostPerBird)} daily cost per live bird on ${latestCostingReport?.reportDate ?? 'the latest day'}.`
+                  : 'Start billing to see product-wise sales amount here.'
               }
             />
             {!topProductAmounts.length ? (
@@ -592,12 +515,12 @@ export function DashboardPage() {
               caption={
                 products.length
                   ? `Base purchase cost plus total farm expenses of \u20B9 ${money(totalExpenseAmount)} are used to show current live-bird cost.`
-                  : `Imported March report is being used here. Total costing considered: \u20B9 ${money(totalCostingSpent)}.`
+                  : 'This dashboard uses only live app data. Imported Excel reports are shown in Report Dashboard.'
               }
             />
             {!inventoryDetails.length ? (
               <Typography color="text.secondary">
-                Add products in Products and the inventory register will appear here.
+                Add products in Products and the inventory register will appear here. Imported Excel data is available in Report Dashboard.
               </Typography>
             ) : (
               <Stack spacing={1.1}>
@@ -711,7 +634,11 @@ export function DashboardPage() {
             <SectionHeader
               eyebrow="Top Products"
               title="Product sales breakdown"
-              caption="See how much amount each product has sold for."
+              caption={
+                topProducts.length
+                  ? 'See how much amount each product has sold for.'
+                  : 'Sales graph will appear after live billing starts.'
+              }
             />
             {!topProducts.length ? (
               <Typography color="text.secondary">Sales graphs will appear after billing starts.</Typography>
@@ -758,8 +685,8 @@ export function DashboardPage() {
           <CardContent>
             <SectionHeader
               eyebrow="Setup"
-              title="Add your first products"
-              caption="Go to Products and enter your real farm inventory to activate purchases, billing, mortality, and dashboard analytics."
+              title="Add your first live records"
+              caption="Use Products, Purchases, Billing, Mortality, and Expenses for live app data. Imported Excel data is shown separately in Report Dashboard."
             />
             <Divider sx={{ borderColor: 'rgba(15,23,42,0.08)' }} />
           </CardContent>

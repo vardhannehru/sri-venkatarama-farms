@@ -34,6 +34,7 @@ const defaultDb = {
   expenses: [],
   dailyReports: [],
   costingReports: [],
+  larvaCostingReports: [],
   dailyTarget: { quantity: 0 },
   dailySales: {},
   sales: [],
@@ -234,6 +235,7 @@ async function readJsonDb() {
       expenses: Array.isArray(parsed.expenses) ? parsed.expenses : [],
       dailyReports: Array.isArray(parsed.dailyReports) ? parsed.dailyReports : [],
       costingReports: Array.isArray(parsed.costingReports) ? parsed.costingReports : [],
+      larvaCostingReports: Array.isArray(parsed.larvaCostingReports) ? parsed.larvaCostingReports : [],
       sales: Array.isArray(parsed.sales) ? parsed.sales : [],
       users,
       sessions,
@@ -366,6 +368,10 @@ function createJsonStorage() {
     async listCostingReports() {
       const db = await readJsonDb();
       return [...(db.costingReports ?? [])].sort((a, b) => String(a.reportDate).localeCompare(String(b.reportDate)));
+    },
+    async listLarvaCostingReports() {
+      const db = await readJsonDb();
+      return [...(db.larvaCostingReports ?? [])].sort((a, b) => String(a.reportDate).localeCompare(String(b.reportDate)));
     },
     async upsertDailyReport(report) {
       const db = await readJsonDb();
@@ -868,6 +874,9 @@ function createPostgresStorage() {
       }));
     },
     async listCostingReports() {
+      return [];
+    },
+    async listLarvaCostingReports() {
       return [];
     },
     async upsertDailyReport(report) {
@@ -1401,6 +1410,11 @@ const server = createServer(async (req, res) => {
     if (!authState) return;
     if (!requireRole(authState, res, 'admin')) return;
     const body = await readBody(req);
+    const rawAmount = Math.max(0, Number(body.amount ?? 0) || 0);
+    const rawFeedUsedKg = Math.max(0, Number(body.feedUsedKg ?? 0) || 0);
+    const rawFeedRatePerKg = Math.max(0, Number(body.feedRatePerKg ?? 0) || 0);
+    const computedFeedAmount = rawAmount > 0 ? rawAmount : rawFeedUsedKg * rawFeedRatePerKg;
+    const computedFeedRate = rawFeedUsedKg > 0 && computedFeedAmount > 0 ? computedFeedAmount / rawFeedUsedKg : rawFeedRatePerKg;
     const expense = {
       id: randomUUID(),
       createdAt: new Date().toISOString(),
@@ -1409,7 +1423,7 @@ const server = createServer(async (req, res) => {
         0,
         Number(
           body.category === 'Feed'
-            ? (Number(body.feedUsedKg ?? 0) || 0) * (Number(body.feedRatePerKg ?? 0) || 0)
+            ? computedFeedAmount
             : body.amount ?? 0
         ) || 0
       ),
@@ -1417,9 +1431,9 @@ const server = createServer(async (req, res) => {
         body.openingFeedKg === undefined || body.openingFeedKg === null || body.openingFeedKg === ''
           ? undefined
           : Math.max(0, Number(body.openingFeedKg) || 0),
-      feedRatePerKg: Math.max(0, Number(body.feedRatePerKg ?? 0) || 0),
+      feedRatePerKg: Math.max(0, computedFeedRate || 0),
       feedReceivedKg: Math.max(0, Number(body.feedReceivedKg ?? 0) || 0),
-      feedUsedKg: Math.max(0, Number(body.feedUsedKg ?? 0) || 0),
+      feedUsedKg: rawFeedUsedKg,
       notes: body.notes ? String(body.notes).trim() : undefined,
     };
     const hasFeedEntry =
@@ -1443,6 +1457,12 @@ const server = createServer(async (req, res) => {
     const authState = await requireAuth(req, res);
     if (!authState) return;
     return sendJson(res, 200, await storage.listCostingReports());
+  }
+
+  if (pathname === '/api/larva-costing' && req.method === 'GET') {
+    const authState = await requireAuth(req, res);
+    if (!authState) return;
+    return sendJson(res, 200, await storage.listLarvaCostingReports());
   }
 
   if (pathname === '/api/daily-reports' && req.method === 'POST') {

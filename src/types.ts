@@ -111,8 +111,23 @@ export type CostingReportRecord = {
   perBirdFeedGrams: number;
   totalFeedKg: number;
   totalFeedCost: number;
+  larva: number;
   otherExpenses: number;
   gas: number;
   dailyLabour: number;
   totalCostInDay: number;
+  finalPerBirdCost?: number;
+};
+
+export type LarvaCostingRecord = {
+  id: string;
+  reportDate: string;
+  larvaEggGrams: string;
+  larvaCost: number;
+  ethanolSyrup: number;
+  brokenRiceCake: number;
+  others: number;
+  labour: number;
+  total: number;
+  quailFeedLarva: number;
 };

@@ -7,10 +7,11 @@ import { BillingPage } from './pages/BillingPage';
 import { InvoicesPage } from './pages/InvoicesPage';
 import { ProductsPage } from './pages/ProductsPage';
 import { CustomersPage } from './pages/CustomersPage';
-import { ExpensesPage } from './pages/ExpensesPage';
+import { ElectricityPage, FeedPage, LabourPage } from './pages/ExpenseCategoryPage';
 import { PurchasesPage } from './pages/PurchasesPage';
 import { MortalityPage } from './pages/MortalityPage';
 import { ReportsPage } from './pages/ReportsPage';
+import { ReportDashboardPage } from './pages/ReportDashboardPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { getCurrentRole } from './lib/auth';
 
@@ -71,10 +72,26 @@ export default function App() {
           }
         />
         <Route
-          path="expenses"
+          path="feed"
           element={
-            <RequireAuth allowedRoles={['admin']}>
-              <ExpensesPage />
+            <RequireAuth allowedRoles={['admin', 'salesman']}>
+              <FeedPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="labour"
+          element={
+            <RequireAuth allowedRoles={['admin', 'salesman']}>
+              <LabourPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="electricity"
+          element={
+            <RequireAuth allowedRoles={['admin', 'salesman']}>
+              <ElectricityPage />
             </RequireAuth>
           }
         />
@@ -83,6 +100,14 @@ export default function App() {
           element={
             <RequireAuth allowedRoles={['admin']}>
               <ReportsPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="report-dashboard"
+          element={
+            <RequireAuth allowedRoles={['admin']}>
+              <ReportDashboardPage />
             </RequireAuth>
           }
         />
