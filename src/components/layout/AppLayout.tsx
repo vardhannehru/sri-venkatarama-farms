@@ -38,6 +38,7 @@ import AutoGraphIcon from '@mui/icons-material/AutoGraph';
 import GrassIcon from '@mui/icons-material/Grass';
 import EngineeringIcon from '@mui/icons-material/Engineering';
 import BoltIcon from '@mui/icons-material/Bolt';
+import BugReportIcon from '@mui/icons-material/BugReport';
 import { useEffect, useMemo, useState } from 'react';
 import { getCurrentUser, logout } from '../../lib/auth';
 import type { UserRole } from '../../types';
@@ -74,6 +75,7 @@ const pageMeta: Record<string, { title: string; subtitle: string }> = {
   '/feed': { title: 'Feed', subtitle: 'Enter feed stock, feed usage, and feed cost separately.' },
   '/labour': { title: 'Labour', subtitle: 'Record labour entries separately from the other farm costs.' },
   '/electricity': { title: 'Electricity', subtitle: 'Record electricity charges separately from feed and labour.' },
+  '/larva': { title: 'Larva', subtitle: 'Record larva cost separately so it also appears in the daily report.' },
   '/report-dashboard': { title: 'Report Dashboard', subtitle: 'See imported Excel report data separately from live app activity.' },
   '/reports': { title: 'Daily Report', subtitle: 'Automatically calculated from purchases, sales, mortality, and feed expenses.' },
   '/settings': { title: 'Settings', subtitle: 'Adjust app configuration and preferences.' },
@@ -101,6 +103,7 @@ export function AppLayout() {
       { label: 'Feed', path: '/feed', icon: <GrassIcon />, section: 'management', roles: ['admin', 'salesman'] },
       { label: 'Labour', path: '/labour', icon: <EngineeringIcon />, section: 'management', roles: ['admin', 'salesman'] },
       { label: 'Electricity', path: '/electricity', icon: <BoltIcon />, section: 'management', roles: ['admin', 'salesman'] },
+      { label: 'Larva', path: '/larva', icon: <BugReportIcon />, section: 'management', roles: ['admin', 'salesman'] },
       { label: 'Customers', path: '/customers', icon: <PeopleIcon />, section: 'management', roles: ['admin'] },
       { label: 'Report Dashboard', path: '/report-dashboard', icon: <AutoGraphIcon />, section: 'management', roles: ['admin'] },
       { label: 'Daily Report', path: '/reports', icon: <AssessmentIcon />, section: 'management', roles: ['admin'] },

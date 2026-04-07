@@ -72,6 +72,7 @@ function computeDailyReportMetrics(input) {
   const usedFeedKg = Math.max(0, Number(input.usedFeedKg ?? 0));
   const receivedFeedKg = Math.max(0, Number(input.receivedFeedKg ?? 0));
   const totalFeedCost = Math.max(0, Number(input.totalFeedCost ?? 0));
+  const larvaCost = Math.max(0, Number(input.larvaCost ?? 0));
   const closingBirds = Math.max(0, openingBirds - mortality);
   const closingFeedKg = Math.max(0, openingFeedKg + receivedFeedKg - usedFeedKg);
   const perBirdKg = closingBirds > 0 ? usedFeedKg / closingBirds : 0;
@@ -89,6 +90,7 @@ function computeDailyReportMetrics(input) {
     perBirdKg,
     perBirdFeedCost,
     totalFeedCost,
+    larvaCost,
   };
 }
 
@@ -348,10 +350,18 @@ function createJsonStorage() {
       return [...(db.expenses ?? [])]
         .map((expense) => ({
           ...expense,
+          birdType: expense.birdType ?? undefined,
           openingFeedKg: expense.openingFeedKg === undefined || expense.openingFeedKg === null ? undefined : Number(expense.openingFeedKg),
           feedRatePerKg: Number(expense.feedRatePerKg ?? 0),
           feedReceivedKg: Number(expense.feedReceivedKg ?? 0),
           feedUsedKg: Number(expense.feedUsedKg ?? 0),
+          larvaEggGrams: expense.larvaEggGrams ?? '',
+          larvaCost: Number(expense.larvaCost ?? 0),
+          ethanolSyrup: Number(expense.ethanolSyrup ?? 0),
+          brokenRiceCake: Number(expense.brokenRiceCake ?? 0),
+          others: Number(expense.others ?? 0),
+          labourCost: Number(expense.labourCost ?? 0),
+          quailFeedLarva: Number(expense.quailFeedLarva ?? 0),
         }))
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     },
@@ -553,9 +563,25 @@ function createPostgresStorage() {
           feed_rate_per_kg NUMERIC NOT NULL DEFAULT 0,
           feed_received_kg NUMERIC NOT NULL DEFAULT 0,
           feed_used_kg NUMERIC NOT NULL DEFAULT 0,
+          larva_egg_grams TEXT,
+          larva_cost NUMERIC NOT NULL DEFAULT 0,
+          ethanol_syrup NUMERIC NOT NULL DEFAULT 0,
+          broken_rice_cake NUMERIC NOT NULL DEFAULT 0,
+          others NUMERIC NOT NULL DEFAULT 0,
+          labour_cost NUMERIC NOT NULL DEFAULT 0,
+          quail_feed_larva NUMERIC NOT NULL DEFAULT 0,
+          bird_type TEXT,
           notes TEXT
         );
       `);
+      await pool.query(`ALTER TABLE expenses ADD COLUMN IF NOT EXISTS larva_egg_grams TEXT;`);
+      await pool.query(`ALTER TABLE expenses ADD COLUMN IF NOT EXISTS larva_cost NUMERIC NOT NULL DEFAULT 0;`);
+      await pool.query(`ALTER TABLE expenses ADD COLUMN IF NOT EXISTS ethanol_syrup NUMERIC NOT NULL DEFAULT 0;`);
+      await pool.query(`ALTER TABLE expenses ADD COLUMN IF NOT EXISTS broken_rice_cake NUMERIC NOT NULL DEFAULT 0;`);
+      await pool.query(`ALTER TABLE expenses ADD COLUMN IF NOT EXISTS others NUMERIC NOT NULL DEFAULT 0;`);
+      await pool.query(`ALTER TABLE expenses ADD COLUMN IF NOT EXISTS labour_cost NUMERIC NOT NULL DEFAULT 0;`);
+      await pool.query(`ALTER TABLE expenses ADD COLUMN IF NOT EXISTS quail_feed_larva NUMERIC NOT NULL DEFAULT 0;`);
+      await pool.query(`ALTER TABLE expenses ADD COLUMN IF NOT EXISTS bird_type TEXT;`);
       await pool.query(`ALTER TABLE expenses ADD COLUMN IF NOT EXISTS opening_feed_kg NUMERIC;`);
       await pool.query(`ALTER TABLE expenses ADD COLUMN IF NOT EXISTS feed_rate_per_kg NUMERIC NOT NULL DEFAULT 0;`);
       await pool.query(`ALTER TABLE expenses ADD COLUMN IF NOT EXISTS feed_received_kg NUMERIC NOT NULL DEFAULT 0;`);
@@ -586,9 +612,11 @@ function createPostgresStorage() {
           closing_feed_kg NUMERIC NOT NULL DEFAULT 0,
           per_bird_kg NUMERIC NOT NULL DEFAULT 0,
           per_bird_feed_cost NUMERIC NOT NULL DEFAULT 0,
-          total_feed_cost NUMERIC NOT NULL DEFAULT 0
+          total_feed_cost NUMERIC NOT NULL DEFAULT 0,
+          larva_cost NUMERIC NOT NULL DEFAULT 0
         );
       `);
+      await pool.query(`ALTER TABLE daily_reports ADD COLUMN IF NOT EXISTS larva_cost NUMERIC NOT NULL DEFAULT 0;`);
       await pool.query(`
         CREATE TABLE IF NOT EXISTS costing_reports (
           id TEXT PRIMARY KEY,
@@ -679,9 +707,9 @@ function createPostgresStorage() {
               INSERT INTO daily_reports (
                 id, report_date, opening_birds, mortality, sick, closing_birds,
                 opening_feed_kg, used_feed_kg, received_feed_kg, closing_feed_kg,
-                per_bird_kg, per_bird_feed_cost, total_feed_cost
+                per_bird_kg, per_bird_feed_cost, total_feed_cost, larva_cost
               )
-              VALUES ($1, $2::date, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+              VALUES ($1, $2::date, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
               ON CONFLICT (report_date) DO NOTHING
             `,
             [
@@ -698,6 +726,7 @@ function createPostgresStorage() {
               report.perBirdKg,
               report.perBirdFeedCost,
               report.totalFeedCost,
+              Number(report.larvaCost ?? 0),
             ]
           );
         }
@@ -927,7 +956,8 @@ function createPostgresStorage() {
     async listExpenses() {
       const result = await pool.query(
         `
-          SELECT id, created_at, category, amount, opening_feed_kg, feed_rate_per_kg, feed_received_kg, feed_used_kg, notes
+          SELECT id, created_at, category, bird_type, amount, opening_feed_kg, feed_rate_per_kg, feed_received_kg, feed_used_kg,
+                 larva_egg_grams, larva_cost, ethanol_syrup, broken_rice_cake, others, labour_cost, quail_feed_larva, notes
           FROM expenses
           ORDER BY created_at DESC
         `
@@ -936,29 +966,48 @@ function createPostgresStorage() {
         id: row.id,
         createdAt: row.created_at,
         category: row.category,
+        birdType: row.bird_type ?? undefined,
         amount: Number(row.amount ?? 0),
         openingFeedKg: row.opening_feed_kg === null || row.opening_feed_kg === undefined ? undefined : Number(row.opening_feed_kg),
         feedRatePerKg: Number(row.feed_rate_per_kg ?? 0),
         feedReceivedKg: Number(row.feed_received_kg ?? 0),
         feedUsedKg: Number(row.feed_used_kg ?? 0),
+        larvaEggGrams: row.larva_egg_grams ?? '',
+        larvaCost: Number(row.larva_cost ?? 0),
+        ethanolSyrup: Number(row.ethanol_syrup ?? 0),
+        brokenRiceCake: Number(row.broken_rice_cake ?? 0),
+        others: Number(row.others ?? 0),
+        labourCost: Number(row.labour_cost ?? 0),
+        quailFeedLarva: Number(row.quail_feed_larva ?? 0),
         notes: row.notes ?? undefined,
       }));
     },
     async createExpense(expense) {
       await pool.query(
         `
-          INSERT INTO expenses (id, created_at, category, amount, opening_feed_kg, feed_rate_per_kg, feed_received_kg, feed_used_kg, notes)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+          INSERT INTO expenses (
+            id, created_at, category, bird_type, amount, opening_feed_kg, feed_rate_per_kg, feed_received_kg, feed_used_kg,
+            larva_egg_grams, larva_cost, ethanol_syrup, broken_rice_cake, others, labour_cost, quail_feed_larva, notes
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
         `,
         [
           expense.id,
           expense.createdAt,
           expense.category,
+          expense.birdType ?? null,
           expense.amount,
           expense.openingFeedKg ?? null,
           Number(expense.feedRatePerKg ?? 0),
           Number(expense.feedReceivedKg ?? 0),
           Number(expense.feedUsedKg ?? 0),
+          expense.larvaEggGrams ?? null,
+          Number(expense.larvaCost ?? 0),
+          Number(expense.ethanolSyrup ?? 0),
+          Number(expense.brokenRiceCake ?? 0),
+          Number(expense.others ?? 0),
+          Number(expense.labourCost ?? 0),
+          Number(expense.quailFeedLarva ?? 0),
           expense.notes ?? null,
         ]
       );
@@ -980,7 +1029,8 @@ function createPostgresStorage() {
             closing_feed_kg,
             per_bird_kg,
             per_bird_feed_cost,
-            total_feed_cost
+            total_feed_cost,
+            larva_cost
           FROM daily_reports
           ORDER BY report_date ASC
         `
@@ -999,6 +1049,7 @@ function createPostgresStorage() {
         perBirdKg: Number(row.per_bird_kg ?? 0),
         perBirdFeedCost: Number(row.per_bird_feed_cost ?? 0),
         totalFeedCost: Number(row.total_feed_cost ?? 0),
+        larvaCost: Number(row.larva_cost ?? 0),
       }));
       if (rows.length) {
         return rows;
@@ -1084,9 +1135,10 @@ function createPostgresStorage() {
             closing_feed_kg,
             per_bird_kg,
             per_bird_feed_cost,
-            total_feed_cost
+            total_feed_cost,
+            larva_cost
           )
-          VALUES ($1, $2::date, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+          VALUES ($1, $2::date, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
           ON CONFLICT (report_date)
           DO UPDATE SET
             opening_birds = EXCLUDED.opening_birds,
@@ -1099,7 +1151,8 @@ function createPostgresStorage() {
             closing_feed_kg = EXCLUDED.closing_feed_kg,
             per_bird_kg = EXCLUDED.per_bird_kg,
             per_bird_feed_cost = EXCLUDED.per_bird_feed_cost,
-            total_feed_cost = EXCLUDED.total_feed_cost
+            total_feed_cost = EXCLUDED.total_feed_cost,
+            larva_cost = EXCLUDED.larva_cost
         `,
         [
           report.id,
@@ -1115,6 +1168,7 @@ function createPostgresStorage() {
           report.perBirdKg,
           report.perBirdFeedCost,
           report.totalFeedCost,
+          Number(report.larvaCost ?? 0),
         ]
       );
       return report;
@@ -1239,6 +1293,9 @@ function createPostgresStorage() {
         ]
       );
       for (const item of sale.items) {
+        if (String(item.productId).startsWith('custom-')) {
+          continue;
+        }
         await pool.query(
           `
             UPDATE products
@@ -1321,6 +1378,9 @@ function createPostgresStorage() {
       if (!sale) return null;
       const items = Array.isArray(sale.items) ? sale.items : [];
       for (const item of items) {
+        if (String(item.productId).startsWith('custom-')) {
+          continue;
+        }
         await pool.query(
           `
             UPDATE products
@@ -1604,10 +1664,10 @@ const server = createServer(async (req, res) => {
     const rawFeedRatePerKg = Math.max(0, Number(body.feedRatePerKg ?? 0) || 0);
     const computedFeedAmount = rawAmount > 0 ? rawAmount : rawFeedUsedKg * rawFeedRatePerKg;
     const computedFeedRate = rawFeedUsedKg > 0 && computedFeedAmount > 0 ? computedFeedAmount / rawFeedUsedKg : rawFeedRatePerKg;
-    const expense = {
-      id: randomUUID(),
-      createdAt: new Date().toISOString(),
-      category: String(body.category ?? '').trim(),
+      const expense = {
+        id: randomUUID(),
+        createdAt: new Date().toISOString(),
+        category: String(body.category ?? '').trim(),
       amount: Math.max(
         0,
         Number(
@@ -1616,25 +1676,44 @@ const server = createServer(async (req, res) => {
             : body.amount ?? 0
         ) || 0
       ),
-      openingFeedKg:
-        body.openingFeedKg === undefined || body.openingFeedKg === null || body.openingFeedKg === ''
-          ? undefined
-          : Math.max(0, Number(body.openingFeedKg) || 0),
-      feedRatePerKg: Math.max(0, computedFeedRate || 0),
-      feedReceivedKg: Math.max(0, Number(body.feedReceivedKg ?? 0) || 0),
-      feedUsedKg: rawFeedUsedKg,
-      notes: body.notes ? String(body.notes).trim() : undefined,
-    };
-    const hasFeedEntry =
-      expense.openingFeedKg !== undefined || expense.feedReceivedKg > 0 || expense.feedUsedKg > 0 || expense.feedRatePerKg > 0;
-    if (!expense.category || (expense.category !== 'Feed' && expense.amount <= 0)) {
-      return sendJson(res, 400, { message: 'Expense category and amount are required' });
+        openingFeedKg:
+          body.openingFeedKg === undefined || body.openingFeedKg === null || body.openingFeedKg === ''
+            ? undefined
+            : Math.max(0, Number(body.openingFeedKg) || 0),
+        feedRatePerKg: Math.max(0, computedFeedRate || 0),
+        feedReceivedKg: Math.max(0, Number(body.feedReceivedKg ?? 0) || 0),
+        feedUsedKg: rawFeedUsedKg,
+        birdType: body.birdType === 'Naatu Koodi' ? 'Naatu Koodi' : body.birdType === 'Quail Bird' ? 'Quail Bird' : undefined,
+        larvaEggGrams: body.larvaEggGrams ? String(body.larvaEggGrams).trim() : undefined,
+        larvaCost: Math.max(0, Number(body.larvaCost ?? 0) || 0),
+        ethanolSyrup: Math.max(0, Number(body.ethanolSyrup ?? 0) || 0),
+        brokenRiceCake: Math.max(0, Number(body.brokenRiceCake ?? 0) || 0),
+        others: Math.max(0, Number(body.others ?? 0) || 0),
+        labourCost: Math.max(0, Number(body.labourCost ?? 0) || 0),
+        quailFeedLarva: Math.max(0, Number(body.quailFeedLarva ?? 0) || 0),
+        notes: body.notes ? String(body.notes).trim() : undefined,
+      };
+      const hasFeedEntry =
+      expense.openingFeedKg !== undefined || expense.feedReceivedKg > 0 || expense.feedUsedKg > 0 || expense.feedRatePerKg > 0 || expense.larvaCost > 0;
+      const hasLarvaEntry =
+        !!expense.larvaEggGrams ||
+        expense.larvaCost > 0 ||
+        expense.ethanolSyrup > 0 ||
+        expense.brokenRiceCake > 0 ||
+        expense.others > 0 ||
+        expense.labourCost > 0 ||
+        expense.quailFeedLarva > 0;
+      if (!expense.category || (expense.category !== 'Feed' && expense.amount <= 0)) {
+        return sendJson(res, 400, { message: 'Expense category and amount are required' });
+      }
+      if (expense.category === 'Feed' && !hasFeedEntry) {
+        return sendJson(res, 400, { message: 'Enter opening stock, received feed, used feed, or feed rate' });
+      }
+      if (expense.category === 'Larva' && !hasLarvaEntry) {
+        return sendJson(res, 400, { message: 'Enter larva growing cost details' });
+      }
+      return sendJson(res, 200, await storage.createExpense(expense));
     }
-    if (expense.category === 'Feed' && !hasFeedEntry) {
-      return sendJson(res, 400, { message: 'Enter opening stock, received feed, used feed, or feed rate' });
-    }
-    return sendJson(res, 200, await storage.createExpense(expense));
-  }
 
   if (pathname === '/api/daily-reports' && req.method === 'GET') {
     const authState = await requireAuth(req, res);
@@ -1735,6 +1814,9 @@ const server = createServer(async (req, res) => {
     }
     const products = await storage.listProducts();
     for (const item of items) {
+      if (String(item.productId).startsWith('custom-')) {
+        continue;
+      }
       const product = products.find((entry) => entry.id === item.productId);
       const availableStock = Number(product?.stock ?? 0);
       if (!product) {
@@ -1863,7 +1945,7 @@ const server = createServer(async (req, res) => {
 
 try {
   await storage.init();
-  server.listen(PORT, () => {
+  server.listen(PORT, '0.0.0.0', () => {
     console.log(`Backend running on http://localhost:${PORT} using ${storage.kind}`);
   });
 } catch (error) {

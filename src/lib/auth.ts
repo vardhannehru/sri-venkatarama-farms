@@ -10,18 +10,18 @@ type LoginResponse = {
 };
 
 function readStoredUser(): SessionUser | null {
-  const raw = localStorage.getItem(USER_KEY);
+  const raw = sessionStorage.getItem(USER_KEY);
   if (!raw) return null;
   try {
     return JSON.parse(raw) as SessionUser;
   } catch {
-    localStorage.removeItem(USER_KEY);
+    sessionStorage.removeItem(USER_KEY);
     return null;
   }
 }
 
 export function getToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY);
+  return sessionStorage.getItem(TOKEN_KEY);
 }
 
 export function getCurrentUser(): SessionUser | null {
@@ -29,7 +29,7 @@ export function getCurrentUser(): SessionUser | null {
 }
 
 export function setCurrentUser(user: SessionUser): void {
-  localStorage.setItem(USER_KEY, JSON.stringify(user));
+  sessionStorage.setItem(USER_KEY, JSON.stringify(user));
 }
 
 export function getCurrentRole(): UserRole | null {
@@ -53,13 +53,13 @@ export async function login(username: string, password: string): Promise<void> {
     method: 'POST',
     body: JSON.stringify({ username, password }),
   });
-  localStorage.setItem(TOKEN_KEY, result.token);
+  sessionStorage.setItem(TOKEN_KEY, result.token);
   setCurrentUser(result.user);
 }
 
 export async function refreshCurrentUser(): Promise<SessionUser | null> {
   if (!getToken()) {
-    localStorage.removeItem(USER_KEY);
+    sessionStorage.removeItem(USER_KEY);
     return null;
   }
   try {
@@ -67,16 +67,16 @@ export async function refreshCurrentUser(): Promise<SessionUser | null> {
     setCurrentUser(user);
     return user;
   } catch {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
+    sessionStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(USER_KEY);
     return null;
   }
 }
 
 export function logout(): void {
   const token = getToken();
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(USER_KEY);
+  sessionStorage.removeItem(TOKEN_KEY);
+  sessionStorage.removeItem(USER_KEY);
   if (token) {
     fetch('/api/auth/logout', {
       method: 'POST',

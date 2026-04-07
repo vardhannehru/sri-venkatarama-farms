@@ -7,7 +7,7 @@ import { BillingPage } from './pages/BillingPage';
 import { InvoicesPage } from './pages/InvoicesPage';
 import { ProductsPage } from './pages/ProductsPage';
 import { CustomersPage } from './pages/CustomersPage';
-import { ElectricityPage, FeedPage, LabourPage } from './pages/ExpenseCategoryPage';
+import { ElectricityPage, FeedPage, LabourPage, LarvaPage } from './pages/ExpenseCategoryPage';
 import { PurchasesPage } from './pages/PurchasesPage';
 import { MortalityPage } from './pages/MortalityPage';
 import { ReportsPage } from './pages/ReportsPage';
@@ -92,6 +92,14 @@ export default function App() {
           element={
             <RequireAuth allowedRoles={['admin', 'salesman']}>
               <ElectricityPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="larva"
+          element={
+            <RequireAuth allowedRoles={['admin', 'salesman']}>
+              <LarvaPage />
             </RequireAuth>
           }
         />

@@ -76,12 +76,20 @@ export type MortalityRecord = {
 export type ExpenseRecord = {
   id: string;
   createdAt: string;
-  category: 'Feed' | 'Labour' | 'Electricity';
+  category: 'Feed' | 'Labour' | 'Electricity' | 'Larva';
+  birdType?: 'Quail Bird' | 'Naatu Koodi';
   amount: number;
   openingFeedKg?: number;
   feedRatePerKg?: number;
   feedReceivedKg?: number;
   feedUsedKg?: number;
+  larvaEggGrams?: string;
+  larvaCost?: number;
+  ethanolSyrup?: number;
+  brokenRiceCake?: number;
+  others?: number;
+  labourCost?: number;
+  quailFeedLarva?: number;
   notes?: string;
 };
 
@@ -99,6 +107,7 @@ export type DailyReportRecord = {
   perBirdKg: number;
   perBirdFeedCost: number;
   totalFeedCost: number;
+  larvaCost: number;
 };
 
 export type CostingReportRecord = {

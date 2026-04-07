@@ -19,9 +19,16 @@ import { salesApi } from '../lib/salesApi';
 
 const paymentMethods = ['Cash', 'UPI', 'Card', 'Mixed'] as const;
 type PaymentMethod = (typeof paymentMethods)[number];
+const quickBillingTypes = ['Quail Bird', 'Naatu Koodi', 'Other'] as const;
+type QuickBillingType = (typeof quickBillingTypes)[number];
 
 function money(n: number) {
   return new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }).format(n);
+}
+
+function capitalizeStart(value: string) {
+  if (!value) return '';
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 function paymentGroupFor(method: PaymentMethod) {
@@ -34,9 +41,14 @@ export function BillingPage() {
   const [qtyDrafts, setQtyDrafts] = useState<Record<string, string>>({});
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
+  const [savedSales, setSavedSales] = useState<Awaited<ReturnType<typeof salesApi.list>>>([]);
   const [discount, setDiscount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Cash');
   const [received, setReceived] = useState('');
+  const [quickType, setQuickType] = useState<QuickBillingType>('Quail Bird');
+  const [quickOtherName, setQuickOtherName] = useState('');
+  const [quickQty, setQuickQty] = useState('1');
+  const [quickPrice, setQuickPrice] = useState('');
   const [dailyTarget, setDailyTarget] = useState(0);
   const [todaySoldBirds, setTodaySoldBirds] = useState(0);
 
@@ -44,6 +56,7 @@ export function BillingPage() {
     mockProductsDb.list().then(setProducts).catch(() => setProducts([]));
     dailyTargetDb.getTarget().then((target) => setDailyTarget(target.quantity)).catch(() => setDailyTarget(0));
     dailyTargetDb.getTodayQuantity().then(setTodaySoldBirds).catch(() => setTodaySoldBirds(0));
+    salesApi.list().then(setSavedSales).catch(() => setSavedSales([]));
   }, []);
 
   const categories = useMemo(
@@ -72,11 +85,46 @@ export function BillingPage() {
   const subtotal = useMemo(() => cart.reduce((sum, item) => sum + item.lineTotal, 0), [cart]);
   const total = Math.max(0, subtotal - discountValue);
   const balance = receivedValue - total;
-  const dueAmount = Math.max(0, total - receivedValue);
   const remainingTarget = Math.max(0, dailyTarget - todaySoldBirds);
   const hasStockIssue = cart.some((item) => item.qty > (productStockById.get(item.productId) ?? 0));
-  const dueNeedsCustomerDetails = dueAmount > 0;
-  const missingDueCustomerDetails = dueNeedsCustomerDetails && (!customerName.trim() || !customerPhone.trim());
+  const missingCustomerDetails = !customerName.trim() || !customerPhone.trim();
+  const quickQtyValue = Math.max(1, Number(quickQty) || 1);
+  const quickPriceValue = Math.max(0, Number(quickPrice) || 0);
+  const customerByPhone = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const sale of savedSales) {
+      const phone = sale.customerPhone?.trim() ?? '';
+      const name = sale.customerName?.trim() ?? '';
+      if (phone && name) {
+        map.set(phone, name);
+      }
+    }
+    return map;
+  }, [savedSales]);
+  const matchedCustomerName = customerByPhone.get(customerPhone.trim()) ?? '';
+
+  function addQuickItem() {
+    const itemName = quickType === 'Other' ? quickOtherName.trim() : quickType;
+    if (!itemName || quickPriceValue <= 0) {
+      return;
+    }
+    const id = `custom-${Date.now()}`;
+    setCart((prev) => [
+      ...prev,
+      {
+        productId: id,
+        name: `${itemName} - Manual`,
+        qty: quickQtyValue,
+        unitPrice: quickPriceValue,
+        lineTotal: quickQtyValue * quickPriceValue,
+      },
+    ]);
+    setQtyDrafts((drafts) => ({ ...drafts, [id]: String(quickQtyValue) }));
+    setQuickQty('1');
+    setQuickPrice('');
+    setQuickOtherName('');
+    setQuickType('Quail Bird');
+  }
 
   function addToCart(product: Product) {
     if (product.stock <= 0) {
@@ -190,6 +238,72 @@ export function BillingPage() {
                       </Box>
                     ))}
                   </Box>
+                </Box>
+
+                <Divider />
+
+                <Box
+                  sx={{
+                    p: 1.4,
+                    borderRadius: 3,
+                    border: '1px solid rgba(15,23,42,0.08)',
+                    background: 'rgba(248,250,252,0.9)',
+                    display: 'grid',
+                    gap: 1.2,
+                  }}
+                >
+                  <Box>
+                    <Typography variant="subtitle1" fontWeight={800}>
+                      Quick Billing Entry
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Select Quail Bird, Naatu Koodi, or Other. If you choose Other, type the item name manually.
+                    </Typography>
+                  </Box>
+                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.2}>
+                    <TextField
+                      select
+                      label="Item Type"
+                      value={quickType}
+                      onChange={(e) => setQuickType(e.target.value as QuickBillingType)}
+                      fullWidth
+                    >
+                      {quickBillingTypes.map((type) => (
+                        <MenuItem key={type} value={type}>
+                          {type}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                    {quickType === 'Other' ? (
+                      <TextField
+                        label="Other Item Name"
+                        value={quickOtherName}
+                        onChange={(e) => setQuickOtherName(capitalizeStart(e.target.value))}
+                        fullWidth
+                      />
+                    ) : null}
+                    <TextField
+                      label="Qty"
+                      type="number"
+                      value={quickQty}
+                      onChange={(e) => setQuickQty(e.target.value)}
+                      sx={{ minWidth: 100 }}
+                    />
+                    <TextField
+                      label="Price"
+                      type="number"
+                      value={quickPrice}
+                      onChange={(e) => setQuickPrice(e.target.value)}
+                      sx={{ minWidth: 120 }}
+                    />
+                    <Button
+                      variant="outlined"
+                      onClick={addQuickItem}
+                      disabled={(quickType === 'Other' && !quickOtherName.trim()) || quickPriceValue <= 0}
+                    >
+                      Add
+                    </Button>
+                  </Stack>
                 </Box>
 
                 <Divider />
@@ -353,20 +467,27 @@ export function BillingPage() {
           <CardContent sx={{ display: 'grid', gap: 1.5 }}>
             <Typography fontWeight={800}>Totals</Typography>
             <TextField
-              label="Customer name"
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-              required={dueNeedsCustomerDetails}
-              error={dueNeedsCustomerDetails && !customerName.trim()}
-              helperText={dueNeedsCustomerDetails && !customerName.trim() ? 'Customer name is required for due sales.' : ' '}
-            />
-            <TextField
               label="Customer phone"
               value={customerPhone}
-              onChange={(e) => setCustomerPhone(e.target.value.replace(/[^\d+\s-]/g, ''))}
-              required={dueNeedsCustomerDetails}
-              error={dueNeedsCustomerDetails && !customerPhone.trim()}
-              helperText={dueNeedsCustomerDetails && !customerPhone.trim() ? 'Customer phone is required for due sales.' : ' '}
+              onChange={(e) => {
+                const nextPhone = e.target.value.replace(/[^\d+\s-]/g, '');
+                setCustomerPhone(nextPhone);
+                const matchedName = customerByPhone.get(nextPhone.trim());
+                if (matchedName) {
+                  setCustomerName(matchedName);
+                }
+              }}
+              required
+              error={!customerPhone.trim()}
+              helperText={!customerPhone.trim() ? 'Customer phone is required for every sale.' : matchedCustomerName ? `Customer found: ${matchedCustomerName}` : ' '}
+            />
+            <TextField
+              label="Customer name"
+              value={customerName}
+              onChange={(e) => setCustomerName(capitalizeStart(e.target.value))}
+              required
+              error={!customerName.trim()}
+              helperText={!customerName.trim() ? 'Customer name is required for every sale.' : ' '}
             />
             <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
               <Typography color="text.secondary">Subtotal</Typography>
@@ -420,16 +541,16 @@ export function BillingPage() {
               </Typography>
             </Box>
 
-            {missingDueCustomerDetails ? (
+            {missingCustomerDetails ? (
               <Typography color="error.main" variant="body2">
-                Enter customer name and phone before saving a due sale.
+                Enter customer name and phone before saving the sale.
               </Typography>
             ) : null}
 
             <Button
               variant="contained"
               size="large"
-              disabled={!cart.length || hasStockIssue || missingDueCustomerDetails}
+              disabled={!cart.length || hasStockIssue || missingCustomerDetails}
               onClick={async () => {
                 const totalBirds = cart.reduce((sum, item) => sum + item.qty, 0);
                 await salesApi.create({

@@ -3,11 +3,19 @@ import { apiFetch } from './api';
 
 export type CreateExpenseInput = {
   category: ExpenseRecord['category'];
+  birdType?: ExpenseRecord['birdType'];
   amount: number;
   openingFeedKg?: number;
   feedRatePerKg?: number;
   feedReceivedKg?: number;
   feedUsedKg?: number;
+  larvaEggGrams?: string;
+  larvaCost?: number;
+  ethanolSyrup?: number;
+  brokenRiceCake?: number;
+  others?: number;
+  labourCost?: number;
+  quailFeedLarva?: number;
   notes?: string;
 };
 

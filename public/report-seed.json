@@ -723,7 +723,5 @@
                                "totalCostInDay":  1865
                            }
                        ],
-    "larvaCostingReports":  {
-
-                            }
+    "larvaCostingReports":  []
 }

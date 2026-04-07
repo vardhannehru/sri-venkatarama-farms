@@ -4,7 +4,7 @@ const TOKEN_KEY = 'shopapp.token';
 export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
   headers.set('Content-Type', 'application/json');
-  const token = localStorage.getItem(TOKEN_KEY);
+  const token = sessionStorage.getItem(TOKEN_KEY);
   if (token) {
     headers.set('Authorization', `Bearer ${token}`);
   }

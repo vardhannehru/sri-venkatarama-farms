@@ -32,12 +32,29 @@ function fmtDate(date: string) {
   });
 }
 
-function isBirdSaleItem(item: SaleRecord['items'][number]) {
+type BirdReportKind = 'quail' | 'naatu';
+
+function matchesBirdLabel(label: string, kind: BirdReportKind) {
+  const value = label.toLowerCase();
+  if (kind === 'quail') {
+    return value.includes('quail');
+  }
+  return value.includes('naatu') || value.includes('koodi') || value.includes('kodi');
+}
+
+function matchesExpenseBirdType(expense: ExpenseRecord, kind: BirdReportKind) {
+  if (!expense.birdType) {
+    return kind === 'quail';
+  }
+  return kind === 'quail' ? expense.birdType === 'Quail Bird' : expense.birdType === 'Naatu Koodi';
+}
+
+function isBirdSaleItem(item: SaleRecord['items'][number], kind: BirdReportKind) {
   const label = `${item.name} ${item.category ?? ''}`.toLowerCase();
   if (label.includes('egg')) {
     return false;
   }
-  return label.includes('bird') || label.includes('koodi') || label.includes('kodi') || label.includes('meat') || label.includes('live');
+  return matchesBirdLabel(label, kind);
 }
 
 function buildDailyReports(
@@ -45,13 +62,14 @@ function buildDailyReports(
   mortalities: MortalityRecord[],
   sales: SaleRecord[],
   expenses: ExpenseRecord[],
-  storedReports: DailyReportRecord[]
+  storedReports: DailyReportRecord[],
+  kind: BirdReportKind
 ): DailyReportRecord[] {
   const allDates = new Set<string>();
 
-  for (const row of purchases) allDates.add(dateKey(row.createdAt));
-  for (const row of mortalities) allDates.add(dateKey(row.createdAt));
-  for (const row of sales) allDates.add(dateKey(row.createdAt));
+  for (const row of purchases.filter((item) => matchesBirdLabel(item.birdType, kind))) allDates.add(dateKey(row.createdAt));
+  for (const row of mortalities.filter((item) => matchesBirdLabel(item.birdType, kind))) allDates.add(dateKey(row.createdAt));
+  for (const row of sales.filter((row) => row.items.some((item) => isBirdSaleItem(item, kind)))) allDates.add(dateKey(row.createdAt));
   for (const row of expenses) allDates.add(dateKey(row.createdAt));
 
   const latestStoredReport = [...storedReports]
@@ -63,27 +81,31 @@ function buildDailyReports(
   let previousClosingBirds = Number(latestStoredReport?.closingBirds ?? 0);
   let previousClosingFeedKg = Number(latestStoredReport?.closingFeedKg ?? 0);
 
-  return sortedDates.map((reportDate) => {
+    return sortedDates.map((reportDate) => {
     const purchasedBirds = purchases
-      .filter((row) => dateKey(row.createdAt) === reportDate)
+      .filter((row) => matchesBirdLabel(row.birdType, kind) && dateKey(row.createdAt) === reportDate)
       .reduce((sum, row) => sum + row.quantity, 0);
 
     const mortality = mortalities
-      .filter((row) => dateKey(row.createdAt) === reportDate)
+      .filter((row) => matchesBirdLabel(row.birdType, kind) && dateKey(row.createdAt) === reportDate)
       .reduce((sum, row) => sum + row.quantity, 0);
 
     const sick = mortalities
-      .filter((row) => dateKey(row.createdAt) === reportDate)
+      .filter((row) => matchesBirdLabel(row.birdType, kind) && dateKey(row.createdAt) === reportDate)
       .reduce((sum, row) => sum + Number(row.sickQuantity ?? 0), 0);
 
     const liveBirdSales = sales
       .filter((row) => dateKey(row.createdAt) === reportDate)
       .flatMap((row) => row.items)
-      .filter(isBirdSaleItem)
+      .filter((item) => isBirdSaleItem(item, kind))
       .reduce((sum, item) => sum + item.qty, 0);
 
-    const feedExpenses = expenses.filter((row) => row.category === 'Feed' && dateKey(row.createdAt) === reportDate);
+    const feedExpenses = expenses.filter((row) => row.category === 'Feed' && matchesExpenseBirdType(row, kind) && dateKey(row.createdAt) === reportDate);
+    const larvaExpenses = expenses.filter((row) => row.category === 'Larva' && matchesExpenseBirdType(row, kind) && dateKey(row.createdAt) === reportDate);
     const totalFeedCost = feedExpenses.reduce((sum, row) => sum + row.amount, 0);
+    const larvaCost =
+      feedExpenses.reduce((sum, row) => sum + Number(row.larvaCost ?? 0), 0) +
+      larvaExpenses.reduce((sum, row) => sum + row.amount, 0);
     const receivedFeedKg = feedExpenses.reduce((sum, row) => sum + Number(row.feedReceivedKg ?? 0), 0);
     const usedFeedKg = feedExpenses.reduce((sum, row) => sum + Number(row.feedUsedKg ?? 0), 0);
     const manualOpeningFeedKg = feedExpenses.find((row) => row.openingFeedKg !== undefined && row.openingFeedKg !== null);
@@ -113,6 +135,7 @@ function buildDailyReports(
       perBirdKg,
       perBirdFeedCost,
       totalFeedCost,
+      larvaCost,
     };
   });
 }
@@ -168,19 +191,21 @@ export function ReportsPage() {
   }, []);
 
   const rows = useMemo(() => {
-    const computedRows = buildDailyReports(purchases, mortalities, sales, expenses, storedReports);
+    const computedRows = buildDailyReports(purchases, mortalities, sales, expenses, storedReports, 'quail');
     const merged = new Map<string, DailyReportRecord>();
-
-    for (const row of computedRows) {
-      merged.set(row.reportDate, row);
-    }
 
     for (const row of storedReports) {
       merged.set(row.reportDate, row);
     }
 
+    for (const row of computedRows) {
+      merged.set(row.reportDate, row);
+    }
+
     return [...merged.values()].sort((a, b) => String(a.reportDate).localeCompare(String(b.reportDate)));
   }, [storedReports, purchases, mortalities, sales, expenses]);
+
+  const naatuRows = useMemo(() => buildDailyReports(purchases, mortalities, sales, expenses, [], 'naatu'), [purchases, mortalities, sales, expenses]);
 
   const monthlyRows = useMemo(() => {
     const grouped = new Map<
@@ -196,6 +221,7 @@ export function ReportsPage() {
         receivedFeedKg: number;
         closingFeedKg: number;
         totalFeedCost: number;
+        larvaCost: number;
         totalCostInMonth: number;
       }
     >();
@@ -216,6 +242,7 @@ export function ReportsPage() {
           receivedFeedKg: row.receivedFeedKg,
           closingFeedKg: row.closingFeedKg,
           totalFeedCost: row.totalFeedCost,
+          larvaCost: Number(row.larvaCost ?? 0),
           totalCostInMonth: 0,
         });
       } else {
@@ -224,6 +251,7 @@ export function ReportsPage() {
         current.usedFeedKg += row.usedFeedKg;
         current.receivedFeedKg += row.receivedFeedKg;
         current.totalFeedCost += row.totalFeedCost;
+        current.larvaCost += Number(row.larvaCost ?? 0);
         current.closingBirds = row.closingBirds;
         current.closingFeedKg = row.closingFeedKg;
       }
@@ -261,6 +289,23 @@ export function ReportsPage() {
       }));
   }, [rows]);
 
+  const naatuRowsByMonth = useMemo(() => {
+    const grouped = new Map<string, DailyReportRecord[]>();
+    for (const row of naatuRows) {
+      const key = String(row.reportDate).slice(0, 7);
+      const current = grouped.get(key) ?? [];
+      current.push(row);
+      grouped.set(key, current);
+    }
+    return [...grouped.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([month, monthRows]) => ({
+        month,
+        label: monthLabel(`${month}-01`),
+        rows: monthRows.sort((a, b) => String(a.reportDate).localeCompare(String(b.reportDate))),
+      }));
+  }, [naatuRows]);
+
   const costingRowsByMonth = useMemo(() => {
     const grouped = new Map<string, CostingReportRecord[]>();
     for (const row of costingReports) {
@@ -278,6 +323,43 @@ export function ReportsPage() {
       }));
   }, [costingReports]);
 
+  const larvaRegisterRows = useMemo(() => {
+    const grouped = new Map<string, LarvaCostingRecord>();
+
+    for (const row of larvaCostingReports) {
+      grouped.set(row.reportDate, row);
+    }
+
+    for (const row of expenses.filter((item) => item.category === 'Larva')) {
+      const reportDate = dateKey(row.createdAt);
+      const current = grouped.get(reportDate) ?? {
+        id: reportDate,
+        reportDate,
+        larvaEggGrams: '',
+        larvaCost: 0,
+        ethanolSyrup: 0,
+        brokenRiceCake: 0,
+        others: 0,
+        labour: 0,
+        total: 0,
+        quailFeedLarva: 0,
+      };
+
+      current.larvaEggGrams = current.larvaEggGrams || row.larvaEggGrams || '';
+      current.larvaCost += Number(row.larvaCost ?? 0);
+      current.ethanolSyrup += Number(row.ethanolSyrup ?? 0);
+      current.brokenRiceCake += Number(row.brokenRiceCake ?? 0);
+      current.others += Number(row.others ?? 0);
+      current.labour += Number(row.labourCost ?? 0);
+      current.total += Number(row.amount ?? 0);
+      current.quailFeedLarva += Number(row.quailFeedLarva ?? 0);
+
+      grouped.set(reportDate, current);
+    }
+
+    return [...grouped.values()].sort((a, b) => String(a.reportDate).localeCompare(String(b.reportDate)));
+  }, [expenses, larvaCostingReports]);
+
   const exportDailyReportToExcel = () => {
     const header = [
       'Date',
@@ -292,6 +374,7 @@ export function ReportsPage() {
       'Per Bird in KGS',
       'Per Bird Feed Cost',
       'Total Feed Cost',
+      'Larva Cost',
     ];
 
       const csvRows = rows.map((row) => [
@@ -307,6 +390,7 @@ export function ReportsPage() {
       row.perBirdKg,
       row.perBirdFeedCost,
       row.totalFeedCost,
+      Number(row.larvaCost ?? 0),
     ]);
 
     const csv = [header, ...csvRows]
@@ -494,7 +578,7 @@ export function ReportsPage() {
 
   const larvaRowsByMonth = useMemo(() => {
     const grouped = new Map<string, LarvaCostingRecord[]>();
-    for (const row of larvaCostingReports) {
+    for (const row of larvaRegisterRows) {
       const key = String(row.reportDate).slice(0, 7);
       const current = grouped.get(key) ?? [];
       current.push(row);
@@ -507,7 +591,7 @@ export function ReportsPage() {
         label: monthLabel(`${month}-01`),
         rows: monthRows.sort((a, b) => String(a.reportDate).localeCompare(String(b.reportDate))),
       }));
-  }, [larvaCostingReports]);
+  }, [larvaRegisterRows]);
 
   return (
     <Box sx={{ display: 'grid', gap: 2 }}>
@@ -546,9 +630,9 @@ export function ReportsPage() {
       <Accordion defaultExpanded sx={{ borderRadius: '16px !important', overflow: 'hidden' }}>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Stack spacing={0.35}>
-            <Typography fontWeight={800}>Daily report register</Typography>
+            <Typography fontWeight={800}>Quail daily report</Typography>
             <Typography variant="body2" color="text.secondary">
-              Open only when you want to see the daily bird and feed report.
+              This section is only for Quail Bird activity. Naatu Koodi entries appear in the separate section below.
             </Typography>
           </Stack>
         </AccordionSummary>
@@ -569,11 +653,11 @@ export function ReportsPage() {
                   </AccordionSummary>
                   <AccordionDetails>
                     <Box sx={{ overflowX: 'auto' }}>
-                      <Box sx={{ minWidth: 1350 }}>
+                        <Box sx={{ minWidth: 1460 }}>
                         <Box
                           sx={{
                             display: 'grid',
-                            gridTemplateColumns: '1.1fr 1fr 0.8fr 0.7fr 0.9fr 1fr 1fr 1fr 1fr 0.9fr 1fr 1fr',
+                            gridTemplateColumns: '1.1fr 1fr 0.8fr 0.7fr 0.9fr 1fr 1fr 1fr 1fr 0.9fr 1fr 1fr 1fr',
                             gap: 1,
                             p: 1.2,
                             borderRadius: 3,
@@ -595,6 +679,7 @@ export function ReportsPage() {
                           <Box>Per Bird in KGS</Box>
                           <Box>Per Bird Feed Cost</Box>
                           <Box>Total Feed Cost</Box>
+                          <Box>Larva Cost</Box>
                         </Box>
 
                         <Stack spacing={1} sx={{ mt: 1 }}>
@@ -603,7 +688,7 @@ export function ReportsPage() {
                               key={row.id}
                               sx={{
                                 display: 'grid',
-                                gridTemplateColumns: '1.1fr 1fr 0.8fr 0.7fr 0.9fr 1fr 1fr 1fr 1fr 0.9fr 1fr 1fr',
+                                gridTemplateColumns: '1.1fr 1fr 0.8fr 0.7fr 0.9fr 1fr 1fr 1fr 1fr 0.9fr 1fr 1fr 1fr',
                                 gap: 1,
                                 p: 1.2,
                                 borderRadius: 3,
@@ -624,6 +709,103 @@ export function ReportsPage() {
                               <Box>{money(row.perBirdKg, 4)}</Box>
                               <Box>{money(row.perBirdFeedCost, 4)}</Box>
                               <Box>{money(row.totalFeedCost, 2)}</Box>
+                              <Box>{money(row.larvaCost ?? 0, 2)}</Box>
+                            </Box>
+                          ))}
+                        </Stack>
+                      </Box>
+                    </Box>
+                  </AccordionDetails>
+                </Accordion>
+              ))}
+            </Stack>
+          )}
+        </AccordionDetails>
+      </Accordion>
+
+      <Accordion sx={{ borderRadius: '16px !important', overflow: 'hidden' }}>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Stack spacing={0.35}>
+            <Typography fontWeight={800}>Naatu Koodi daily report</Typography>
+            <Typography variant="body2" color="text.secondary">
+              Same report format as quail, tracked separately for Naatu Koodi live activity.
+            </Typography>
+          </Stack>
+        </AccordionSummary>
+        <AccordionDetails>
+          {!naatuRowsByMonth.length ? (
+            <Typography color="text.secondary">No Naatu Koodi activity yet. Add purchases, mortality, sales, and feed entries to start this report.</Typography>
+          ) : (
+            <Stack spacing={1.2}>
+              {naatuRowsByMonth.map((monthGroup) => (
+                <Accordion key={monthGroup.month} sx={{ borderRadius: '14px !important', overflow: 'hidden', boxShadow: 'none', border: '1px solid rgba(15,23,42,0.08)' }}>
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Stack spacing={0.25}>
+                      <Typography fontWeight={800}>{monthGroup.label}</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {monthGroup.rows.length} daily entries
+                      </Typography>
+                    </Stack>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Box sx={{ overflowX: 'auto' }}>
+                      <Box sx={{ minWidth: 1460 }}>
+                        <Box
+                          sx={{
+                            display: 'grid',
+                            gridTemplateColumns: '1.1fr 1fr 0.8fr 0.7fr 0.9fr 1fr 1fr 1fr 1fr 0.9fr 1fr 1fr 1fr',
+                            gap: 1,
+                            p: 1.2,
+                            borderRadius: 3,
+                            bgcolor: '#34ff17',
+                            color: '#0f172a',
+                            fontWeight: 900,
+                            textTransform: 'uppercase',
+                          }}
+                        >
+                          <Box>Date</Box>
+                          <Box>Opening Birds</Box>
+                          <Box>Mortality</Box>
+                          <Box>Sick</Box>
+                          <Box>C - Birds</Box>
+                          <Box>Feed - OB in KGS</Box>
+                          <Box>Used in KGS</Box>
+                          <Box>Received in KGS</Box>
+                          <Box>Closing Feed in KGS</Box>
+                          <Box>Per Bird in KGS</Box>
+                          <Box>Per Bird Feed Cost</Box>
+                          <Box>Total Feed Cost</Box>
+                          <Box>Larva Cost</Box>
+                        </Box>
+
+                        <Stack spacing={1} sx={{ mt: 1 }}>
+                          {monthGroup.rows.map((row) => (
+                            <Box
+                              key={row.id}
+                              sx={{
+                                display: 'grid',
+                                gridTemplateColumns: '1.1fr 1fr 0.8fr 0.7fr 0.9fr 1fr 1fr 1fr 1fr 0.9fr 1fr 1fr 1fr',
+                                gap: 1,
+                                p: 1.2,
+                                borderRadius: 3,
+                                border: '1px solid rgba(15,23,42,0.08)',
+                                alignItems: 'center',
+                                background: 'rgba(255,255,255,0.98)',
+                              }}
+                            >
+                              <Box>{fmtDate(row.reportDate)}</Box>
+                              <Box>{row.openingBirds}</Box>
+                              <Box>{row.mortality}</Box>
+                              <Box>{row.sick}</Box>
+                              <Box>{row.closingBirds}</Box>
+                              <Box>{money(row.openingFeedKg, 2)}</Box>
+                              <Box>{money(row.usedFeedKg, 2)}</Box>
+                              <Box>{money(row.receivedFeedKg, 2)}</Box>
+                              <Box>{money(row.closingFeedKg, 2)}</Box>
+                              <Box>{money(row.perBirdKg, 4)}</Box>
+                              <Box>{money(row.perBirdFeedCost, 4)}</Box>
+                              <Box>{money(row.totalFeedCost, 2)}</Box>
+                              <Box>{money(row.larvaCost ?? 0, 2)}</Box>
                             </Box>
                           ))}
                         </Stack>
@@ -775,11 +957,11 @@ export function ReportsPage() {
                   </AccordionSummary>
                   <AccordionDetails>
                     <Box sx={{ overflowX: 'auto' }}>
-                      <Box sx={{ minWidth: 1450 }}>
+                        <Box sx={{ minWidth: 1560 }}>
                         <Box
                           sx={{
                             display: 'grid',
-                            gridTemplateColumns: '1.1fr 0.9fr 0.8fr 0.7fr 0.9fr 0.95fr 0.95fr 0.95fr 0.95fr 1fr 1fr 1fr 1.1fr',
+                            gridTemplateColumns: '1.1fr 0.9fr 0.8fr 0.7fr 0.9fr 0.95fr 0.95fr 0.95fr 0.95fr 1fr 1fr 1fr 1fr 1.1fr',
                             gap: 1,
                             p: 1.2,
                             borderRadius: 3,
@@ -801,13 +983,14 @@ export function ReportsPage() {
                           <Box>Avg Per Bird KG</Box>
                           <Box>Avg Per Bird Feed Cost</Box>
                           <Box>Total Feed Cost</Box>
+                          <Box>Total Larva Cost</Box>
                           <Box>Total Cost in Month</Box>
                         </Box>
 
                         <Box
                           sx={{
                             display: 'grid',
-                            gridTemplateColumns: '1.1fr 0.9fr 0.8fr 0.7fr 0.9fr 0.95fr 0.95fr 0.95fr 0.95fr 1fr 1fr 1fr 1.1fr',
+                            gridTemplateColumns: '1.1fr 0.9fr 0.8fr 0.7fr 0.9fr 0.95fr 0.95fr 0.95fr 0.95fr 1fr 1fr 1fr 1fr 1.1fr',
                             gap: 1,
                             p: 1.2,
                             borderRadius: 3,
@@ -829,6 +1012,7 @@ export function ReportsPage() {
                           <Box>{money(row.averagePerBirdKg, 4)}</Box>
                           <Box>{money(row.averagePerBirdFeedCost, 4)}</Box>
                           <Box>{money(row.totalFeedCost, 2)}</Box>
+                          <Box>{money(row.larvaCost, 2)}</Box>
                           <Box>{money(row.totalCostInMonth, 2)}</Box>
                         </Box>
                       </Box>

@@ -1,12 +1,18 @@
-import { Alert, Box, Button, Card, CardContent, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Card, CardContent, MenuItem, Stack, TextField, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import type { PurchaseRecord } from '../types';
 import { purchasesApi } from '../lib/purchasesApi';
 
-const birdTypes = ['Quail Bird Live', 'Natukodi'] as const;
+const purchaseTypes = ['Quail Bird', 'Naatu Koodi', 'Other'] as const;
+type PurchaseType = (typeof purchaseTypes)[number];
 
 function money(n: number) {
   return new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 }).format(n);
+}
+
+function capitalizeStart(value: string) {
+  if (!value) return '';
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 function fmtDate(date: string) {
@@ -21,7 +27,8 @@ function fmtDate(date: string) {
 
 export function PurchasesPage() {
   const [rows, setRows] = useState<PurchaseRecord[]>([]);
-  const [birdType, setBirdType] = useState<string>('');
+  const [purchaseType, setPurchaseType] = useState<PurchaseType>('Quail Bird');
+  const [otherItemName, setOtherItemName] = useState('');
   const [quantity, setQuantity] = useState('');
   const [unitCost, setUnitCost] = useState('');
   const [sellPrice, setSellPrice] = useState('');
@@ -46,13 +53,7 @@ export function PurchasesPage() {
     void loadPurchases();
   }, []);
 
-  const birdTypeSuggestions = useMemo(
-    () =>
-      [...new Set([...birdTypes, ...rows.map((row) => row.birdType).filter(Boolean)])].sort((a, b) =>
-        a.localeCompare(b)
-      ),
-    [rows]
-  );
+  const birdType = purchaseType === 'Other' ? otherItemName.trim() : purchaseType;
 
   const quantityValue = Math.max(0, Number(quantity) || 0);
   const unitCostValue = Math.max(0, Number(unitCost) || 0);
@@ -80,6 +81,8 @@ export function PurchasesPage() {
       setSellPrice('');
       setSupplier('');
       setNotes('');
+      setOtherItemName('');
+      setPurchaseType('Quail Bird');
       setSuccess('Purchase saved. Stock, base cost, and selling price updated.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to save purchase');
@@ -95,7 +98,7 @@ export function PurchasesPage() {
           Purchases
         </Typography>
         <Typography color="text.secondary">
-          Record bird purchases first. You can type a new item name here, and the app will create or update it automatically.
+          Record purchases here. Choose Quail Bird, Naatu Koodi, or Other. If you choose Other, type the item name manually.
         </Typography>
       </Box>
 
@@ -105,21 +108,28 @@ export function PurchasesPage() {
       <Card>
         <CardContent sx={{ display: 'grid', gap: 2 }}>
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-            <Box sx={{ width: '100%' }}>
+            <TextField
+              select
+              label="Item Type"
+              value={purchaseType}
+              onChange={(e) => setPurchaseType(e.target.value as PurchaseType)}
+              fullWidth
+            >
+              {purchaseTypes.map((type) => (
+                <MenuItem key={type} value={type}>
+                  {type}
+                </MenuItem>
+              ))}
+            </TextField>
+            {purchaseType === 'Other' ? (
               <TextField
-                label="Item Name"
-                value={birdType}
-                onChange={(e) => setBirdType(e.target.value)}
+                label="Other Item Name"
+                value={otherItemName}
+                onChange={(e) => setOtherItemName(capitalizeStart(e.target.value))}
                 placeholder="Type a new bird or item name"
                 fullWidth
-                inputProps={{ list: 'purchase-item-suggestions' }}
               />
-              <datalist id="purchase-item-suggestions">
-                {birdTypeSuggestions.map((item) => (
-                  <option key={item} value={item} />
-                ))}
-              </datalist>
-            </Box>
+            ) : null}
             <TextField
               label="Quantity"
               type="number"
@@ -143,8 +153,8 @@ export function PurchasesPage() {
             />
           </Stack>
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-            <TextField label="Supplier" value={supplier} onChange={(e) => setSupplier(e.target.value)} fullWidth />
-            <TextField label="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} fullWidth />
+            <TextField label="Supplier" value={supplier} onChange={(e) => setSupplier(capitalizeStart(e.target.value))} fullWidth />
+            <TextField label="Notes" value={notes} onChange={(e) => setNotes(capitalizeStart(e.target.value))} fullWidth />
           </Stack>
           <Typography variant="body2" color="text.secondary">
             Purchase cost can still change daily from feed and farm expenses. New item names saved here will also be created in Products automatically.
