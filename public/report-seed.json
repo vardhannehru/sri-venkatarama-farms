@@ -1,4 +1,4 @@
-﻿{
+{
     "dailyReports":  [
                          {
                              "id":  "2026-03-07",
@@ -11,9 +11,10 @@
                              "usedFeedKg":  4,
                              "receivedFeedKg":  0,
                              "closingFeedKg":  496,
-                             "perBirdKg":  0.0017,
-                             "perBirdFeedCost":  0.07506,
-                             "totalFeedCost":  180
+                             "perBirdKg":  0.0016680567139282735,
+                             "perBirdFeedCost":  0.0750625521267723,
+                             "totalFeedCost":  180,
+                             "larvaCost":  0
                          },
                          {
                              "id":  "2026-03-08",
@@ -26,9 +27,10 @@
                              "usedFeedKg":  6,
                              "receivedFeedKg":  0,
                              "closingFeedKg":  490,
-                             "perBirdKg":  0.0025,
-                             "perBirdFeedCost":  0.11364,
-                             "totalFeedCost":  270
+                             "perBirdKg":  0.0025252525252525255,
+                             "perBirdFeedCost":  0.11363636363636365,
+                             "totalFeedCost":  270,
+                             "larvaCost":  0
                          },
                          {
                              "id":  "2026-03-09",
@@ -41,9 +43,10 @@
                              "usedFeedKg":  10,
                              "receivedFeedKg":  0,
                              "closingFeedKg":  480,
-                             "perBirdKg":  0.0042,
-                             "perBirdFeedCost":  0.19044,
-                             "totalFeedCost":  450
+                             "perBirdKg":  0.0042319085907744393,
+                             "perBirdFeedCost":  0.19043588658484978,
+                             "totalFeedCost":  450,
+                             "larvaCost":  0
                          },
                          {
                              "id":  "2026-03-10",
@@ -56,9 +59,10 @@
                              "usedFeedKg":  16,
                              "receivedFeedKg":  0,
                              "closingFeedKg":  464,
-                             "perBirdKg":  0.0068,
-                             "perBirdFeedCost":  0.3073,
-                             "totalFeedCost":  720
+                             "perBirdKg":  0.0068288518992744348,
+                             "perBirdFeedCost":  0.30729833546734958,
+                             "totalFeedCost":  720.00000000000011,
+                             "larvaCost":  0
                          },
                          {
                              "id":  "2026-03-11",
@@ -71,9 +75,10 @@
                              "usedFeedKg":  12,
                              "receivedFeedKg":  0,
                              "closingFeedKg":  452,
-                             "perBirdKg":  0.0051,
-                             "perBirdFeedCost":  0.23126,
-                             "totalFeedCost":  540
+                             "perBirdKg":  0.0051391862955032118,
+                             "perBirdFeedCost":  0.23126338329764454,
+                             "totalFeedCost":  540,
+                             "larvaCost":  0
                          },
                          {
                              "id":  "2026-03-12",
@@ -86,9 +91,10 @@
                              "usedFeedKg":  16,
                              "receivedFeedKg":  0,
                              "closingFeedKg":  436,
-                             "perBirdKg":  0.0069,
-                             "perBirdFeedCost":  0.30928,
-                             "totalFeedCost":  720
+                             "perBirdKg":  0.0068728522336769758,
+                             "perBirdFeedCost":  0.30927835051546393,
+                             "totalFeedCost":  720,
+                             "larvaCost":  0
                          },
                          {
                              "id":  "2026-03-13",
@@ -101,9 +107,10 @@
                              "usedFeedKg":  20,
                              "receivedFeedKg":  0,
                              "closingFeedKg":  416,
-                             "perBirdKg":  0.0086,
-                             "perBirdFeedCost":  0.3886,
-                             "totalFeedCost":  900
+                             "perBirdKg":  0.0086355785837651123,
+                             "perBirdFeedCost":  0.38860103626943004,
+                             "totalFeedCost":  900,
+                             "larvaCost":  0
                          },
                          {
                              "id":  "2026-03-14",
@@ -116,9 +123,10 @@
                              "usedFeedKg":  22,
                              "receivedFeedKg":  0,
                              "closingFeedKg":  394,
-                             "perBirdKg":  0.0096,
-                             "perBirdFeedCost":  0.43062,
-                             "totalFeedCost":  990
+                             "perBirdKg":  0.0095693779904306216,
+                             "perBirdFeedCost":  0.43062200956937796,
+                             "totalFeedCost":  989.99999999999989,
+                             "larvaCost":  0
                          },
                          {
                              "id":  "2026-03-15",
@@ -131,9 +139,10 @@
                              "usedFeedKg":  27,
                              "receivedFeedKg":  500,
                              "closingFeedKg":  867,
-                             "perBirdKg":  0.0118,
-                             "perBirdFeedCost":  0.53057,
-                             "totalFeedCost":  1215
+                             "perBirdKg":  0.011790393013100437,
+                             "perBirdFeedCost":  0.53056768558951972,
+                             "totalFeedCost":  1215.0000000000002,
+                             "larvaCost":  0
                          },
                          {
                              "id":  "2026-03-16",
@@ -146,9 +155,10 @@
                              "usedFeedKg":  32,
                              "receivedFeedKg":  0,
                              "closingFeedKg":  835,
-                             "perBirdKg":  0.014,
-                             "perBirdFeedCost":  0.63075,
-                             "totalFeedCost":  1440
+                             "perBirdKg":  0.01401664476565922,
+                             "perBirdFeedCost":  0.63074901445466491,
+                             "totalFeedCost":  1440,
+                             "larvaCost":  0
                          },
                          {
                              "id":  "2026-03-17",
@@ -161,9 +171,10 @@
                              "usedFeedKg":  35,
                              "receivedFeedKg":  0,
                              "closingFeedKg":  800,
-                             "perBirdKg":  0.0154,
-                             "perBirdFeedCost":  0.6917,
-                             "totalFeedCost":  1575
+                             "perBirdKg":  0.015371102327624066,
+                             "perBirdFeedCost":  0.691699604743083,
+                             "totalFeedCost":  1575,
+                             "larvaCost":  0
                          },
                          {
                              "id":  "2026-03-18",
@@ -176,9 +187,10 @@
                              "usedFeedKg":  37,
                              "receivedFeedKg":  0,
                              "closingFeedKg":  763,
-                             "perBirdKg":  0.0163,
-                             "perBirdFeedCost":  0.73575,
-                             "totalFeedCost":  1665
+                             "perBirdKg":  0.016349977905435263,
+                             "perBirdFeedCost":  0.73574900574458679,
+                             "totalFeedCost":  1665,
+                             "larvaCost":  0
                          },
                          {
                              "id":  "2026-03-19",
@@ -191,9 +203,10 @@
                              "usedFeedKg":  36,
                              "receivedFeedKg":  0,
                              "closingFeedKg":  727,
-                             "perBirdKg":  0.016,
-                             "perBirdFeedCost":  0.7184,
-                             "totalFeedCost":  1620
+                             "perBirdKg":  0.015964523281596452,
+                             "perBirdFeedCost":  0.71840354767184034,
+                             "totalFeedCost":  1620,
+                             "larvaCost":  0
                          },
                          {
                              "id":  "2026-03-20",
@@ -206,9 +219,10 @@
                              "usedFeedKg":  38,
                              "receivedFeedKg":  0,
                              "closingFeedKg":  689,
-                             "perBirdKg":  0.0169,
-                             "perBirdFeedCost":  0.76101,
-                             "totalFeedCost":  1710
+                             "perBirdKg":  0.016911437472185136,
+                             "perBirdFeedCost":  0.76101468624833113,
+                             "totalFeedCost":  1710,
+                             "larvaCost":  0
                          },
                          {
                              "id":  "2026-03-21",
@@ -221,9 +235,10 @@
                              "usedFeedKg":  40,
                              "receivedFeedKg":  0,
                              "closingFeedKg":  649,
-                             "perBirdKg":  0.0178,
-                             "perBirdFeedCost":  0.80285,
-                             "totalFeedCost":  1800
+                             "perBirdKg":  0.01784121320249777,
+                             "perBirdFeedCost":  0.80285459411239968,
+                             "totalFeedCost":  1800,
+                             "larvaCost":  0
                          },
                          {
                              "id":  "2026-03-22",
@@ -236,9 +251,10 @@
                              "usedFeedKg":  46,
                              "receivedFeedKg":  0,
                              "closingFeedKg":  603,
-                             "perBirdKg":  0.0205,
-                             "perBirdFeedCost":  0.92411,
-                             "totalFeedCost":  2070
+                             "perBirdKg":  0.020535714285714286,
+                             "perBirdFeedCost":  0.9241071428571429,
+                             "totalFeedCost":  2070,
+                             "larvaCost":  0
                          },
                          {
                              "id":  "2026-03-23",
@@ -251,9 +267,10 @@
                              "usedFeedKg":  42,
                              "receivedFeedKg":  0,
                              "closingFeedKg":  561,
-                             "perBirdKg":  0.0188,
-                             "perBirdFeedCost":  0.84488,
-                             "totalFeedCost":  1890
+                             "perBirdKg":  0.018775145283862316,
+                             "perBirdFeedCost":  0.84488153777380415,
+                             "totalFeedCost":  1889.9999999999998,
+                             "larvaCost":  0
                          },
                          {
                              "id":  "2026-03-24",
@@ -266,9 +283,10 @@
                              "usedFeedKg":  40,
                              "receivedFeedKg":  0,
                              "closingFeedKg":  521,
-                             "perBirdKg":  0.0179,
-                             "perBirdFeedCost":  0.80645,
-                             "totalFeedCost":  1800
+                             "perBirdKg":  0.017921146953405017,
+                             "perBirdFeedCost":  0.80645161290322576,
+                             "totalFeedCost":  1800,
+                             "larvaCost":  0
                          },
                          {
                              "id":  "2026-03-25",
@@ -281,9 +299,10 @@
                              "usedFeedKg":  43,
                              "receivedFeedKg":  0,
                              "closingFeedKg":  478,
-                             "perBirdKg":  0.0193,
-                             "perBirdFeedCost":  0.86849,
-                             "totalFeedCost":  1935
+                             "perBirdKg":  0.019299820466786355,
+                             "perBirdFeedCost":  0.868491921005386,
+                             "totalFeedCost":  1935,
+                             "larvaCost":  0
                          },
                          {
                              "id":  "2026-03-26",
@@ -296,9 +315,10 @@
                              "usedFeedKg":  30,
                              "receivedFeedKg":  0,
                              "closingFeedKg":  448,
-                             "perBirdKg":  0.0135,
-                             "perBirdFeedCost":  0.60647,
-                             "totalFeedCost":  1350
+                             "perBirdKg":  0.013477088948787063,
+                             "perBirdFeedCost":  0.60646900269541781,
+                             "totalFeedCost":  1350,
+                             "larvaCost":  0
                          },
                          {
                              "id":  "2026-03-27",
@@ -311,9 +331,10 @@
                              "usedFeedKg":  10,
                              "receivedFeedKg":  0,
                              "closingFeedKg":  438,
-                             "perBirdKg":  0.0045,
-                             "perBirdFeedCost":  0.20252,
-                             "totalFeedCost":  450
+                             "perBirdKg":  0.0045004500450045006,
+                             "perBirdFeedCost":  0.20252025202520252,
+                             "totalFeedCost":  450,
+                             "larvaCost":  0
                          },
                          {
                              "id":  "2026-03-28",
@@ -326,9 +347,10 @@
                              "usedFeedKg":  15,
                              "receivedFeedKg":  0,
                              "closingFeedKg":  423,
-                             "perBirdKg":  0.0068,
-                             "perBirdFeedCost":  0.30405,
-                             "totalFeedCost":  675
+                             "perBirdKg":  0.0067567567567567571,
+                             "perBirdFeedCost":  0.30405405405405406,
+                             "totalFeedCost":  675,
+                             "larvaCost":  0
                          },
                          {
                              "id":  "2026-03-29",
@@ -341,9 +363,10 @@
                              "usedFeedKg":  20,
                              "receivedFeedKg":  0,
                              "closingFeedKg":  403,
-                             "perBirdKg":  0.009,
-                             "perBirdFeedCost":  0.40541,
-                             "totalFeedCost":  900
+                             "perBirdKg":  0.0090090090090090089,
+                             "perBirdFeedCost":  0.40540540540540543,
+                             "totalFeedCost":  900,
+                             "larvaCost":  0
                          },
                          {
                              "id":  "2026-03-30",
@@ -356,9 +379,10 @@
                              "usedFeedKg":  22,
                              "receivedFeedKg":  0,
                              "closingFeedKg":  381,
-                             "perBirdKg":  0.0099,
-                             "perBirdFeedCost":  0.44635,
-                             "totalFeedCost":  990
+                             "perBirdKg":  0.0099188458070333628,
+                             "perBirdFeedCost":  0.44634806131650134,
+                             "totalFeedCost":  990,
+                             "larvaCost":  0
                          },
                          {
                              "id":  "2026-03-31",
@@ -371,9 +395,10 @@
                              "usedFeedKg":  21,
                              "receivedFeedKg":  0,
                              "closingFeedKg":  360,
-                             "perBirdKg":  0.0095,
-                             "perBirdFeedCost":  0.42664,
-                             "totalFeedCost":  945
+                             "perBirdKg":  0.0094808126410835213,
+                             "perBirdFeedCost":  0.42663656884875845,
+                             "totalFeedCost":  945,
+                             "larvaCost":  0
                          },
                          {
                              "id":  "2026-04-01",
@@ -386,9 +411,10 @@
                              "usedFeedKg":  30,
                              "receivedFeedKg":  0,
                              "closingFeedKg":  330,
-                             "perBirdKg":  0.0136,
-                             "perBirdFeedCost":  0.61031,
-                             "totalFeedCost":  1350
+                             "perBirdKg":  0.013562386980108499,
+                             "perBirdFeedCost":  0.61030741410488243,
+                             "totalFeedCost":  1350,
+                             "larvaCost":  0
                          },
                          {
                              "id":  "2026-04-02",
@@ -401,9 +427,10 @@
                              "usedFeedKg":  45,
                              "receivedFeedKg":  0,
                              "closingFeedKg":  285,
-                             "perBirdKg":  0.0204,
-                             "perBirdFeedCost":  0.91712,
-                             "totalFeedCost":  2025
+                             "perBirdKg":  0.020380434782608696,
+                             "perBirdFeedCost":  0.91711956521739135,
+                             "totalFeedCost":  2025,
+                             "larvaCost":  0
                          },
                          {
                              "id":  "2026-04-03",
@@ -416,9 +443,58 @@
                              "usedFeedKg":  50,
                              "receivedFeedKg":  0,
                              "closingFeedKg":  235,
-                             "perBirdKg":  0.0227,
-                             "perBirdFeedCost":  1.01948,
-                             "totalFeedCost":  2250
+                             "perBirdKg":  0.022655188038060717,
+                             "perBirdFeedCost":  1.0194834617127322,
+                             "totalFeedCost":  2250,
+                             "larvaCost":  0
+                         },
+                         {
+                             "id":  "2026-04-04",
+                             "reportDate":  "2026-04-04",
+                             "openingBirds":  2207,
+                             "mortality":  3,
+                             "sick":  8,
+                             "closingBirds":  2204,
+                             "openingFeedKg":  235,
+                             "usedFeedKg":  48,
+                             "receivedFeedKg":  0,
+                             "closingFeedKg":  187,
+                             "perBirdKg":  0.021778584392014518,
+                             "perBirdFeedCost":  0.98003629764065336,
+                             "totalFeedCost":  2160,
+                             "larvaCost":  0
+                         },
+                         {
+                             "id":  "2026-04-05",
+                             "reportDate":  "2026-04-05",
+                             "openingBirds":  2204,
+                             "mortality":  2,
+                             "sick":  5,
+                             "closingBirds":  2202,
+                             "openingFeedKg":  187,
+                             "usedFeedKg":  47,
+                             "receivedFeedKg":  0,
+                             "closingFeedKg":  140,
+                             "perBirdKg":  0.021344232515894641,
+                             "perBirdFeedCost":  0.96049046321525888,
+                             "totalFeedCost":  2115,
+                             "larvaCost":  0
+                         },
+                         {
+                             "id":  "2026-04-06",
+                             "reportDate":  "2026-04-06",
+                             "openingBirds":  2202,
+                             "mortality":  4,
+                             "sick":  3,
+                             "closingBirds":  2198,
+                             "openingFeedKg":  140,
+                             "usedFeedKg":  49,
+                             "receivedFeedKg":  0,
+                             "closingFeedKg":  91,
+                             "perBirdKg":  0.022292993630573247,
+                             "perBirdFeedCost":  1.0031847133757961,
+                             "totalFeedCost":  2204.9999999999995,
+                             "larvaCost":  0
                          }
                      ],
     "costingReports":  [
@@ -430,12 +506,14 @@
                                "totalCost":  24000,
                                "feedPerKg":  45,
                                "perBirdFeedGrams":  1.7,
-                               "totalFeedKg":  4,
+                               "totalFeedKg":  4.08,
                                "totalFeedCost":  183.6,
+                               "larva":  0,
                                "otherExpenses":  0,
                                "gas":  2100,
                                "dailyLabour":  500,
-                               "totalCostInDay":  26783.6
+                               "totalCostInDay":  26783.6,
+                               "finalPerBirdCost":  11.159833333333333
                            },
                            {
                                "id":  "2026-03-08",
@@ -445,12 +523,14 @@
                                "totalCost":  0,
                                "feedPerKg":  45,
                                "perBirdFeedGrams":  2.5,
-                               "totalFeedKg":  6,
+                               "totalFeedKg":  5.99,
                                "totalFeedCost":  269.55,
+                               "larva":  0,
                                "otherExpenses":  0,
                                "gas":  0,
                                "dailyLabour":  500,
-                               "totalCostInDay":  769.55
+                               "totalCostInDay":  769.55,
+                               "finalPerBirdCost":  0.32118113522537561
                            },
                            {
                                "id":  "2026-03-09",
@@ -460,12 +540,14 @@
                                "totalCost":  0,
                                "feedPerKg":  45,
                                "perBirdFeedGrams":  4.23,
-                               "totalFeedKg":  10,
-                               "totalFeedCost":  452.27,
+                               "totalFeedKg":  10.050480000000002,
+                               "totalFeedCost":  452.27160000000009,
+                               "larva":  0,
                                "otherExpenses":  100,
                                "gas":  0,
                                "dailyLabour":  500,
-                               "totalCostInDay":  1052.27
+                               "totalCostInDay":  1052.2716,
+                               "finalPerBirdCost":  0.44287525252525256
                            },
                            {
                                "id":  "2026-03-10",
@@ -475,12 +557,14 @@
                                "totalCost":  0,
                                "feedPerKg":  45,
                                "perBirdFeedGrams":  6.83,
-                               "totalFeedKg":  16,
-                               "totalFeedCost":  726.27,
+                               "totalFeedKg":  16.139290000000003,
+                               "totalFeedCost":  726.26805000000013,
+                               "larva":  0,
                                "otherExpenses":  0,
                                "gas":  0,
                                "dailyLabour":  500,
-                               "totalCostInDay":  1226.27
+                               "totalCostInDay":  1226.2680500000001,
+                               "finalPerBirdCost":  0.518945429538722
                            },
                            {
                                "id":  "2026-03-11",
@@ -490,12 +574,14 @@
                                "totalCost":  0,
                                "feedPerKg":  45,
                                "perBirdFeedGrams":  5.1,
-                               "totalFeedKg":  12,
-                               "totalFeedCost":  537.72,
+                               "totalFeedKg":  11.9493,
+                               "totalFeedCost":  537.7185,
+                               "larva":  0,
                                "otherExpenses":  0,
                                "gas":  0,
                                "dailyLabour":  500,
-                               "totalCostInDay":  1037.72
+                               "totalCostInDay":  1037.7185,
+                               "finalPerBirdCost":  0.44290162185232607
                            },
                            {
                                "id":  "2026-03-12",
@@ -505,12 +591,14 @@
                                "totalCost":  0,
                                "feedPerKg":  45,
                                "perBirdFeedGrams":  6.9,
-                               "totalFeedKg":  16,
-                               "totalFeedCost":  725.02,
+                               "totalFeedKg":  16.1115,
+                               "totalFeedCost":  725.01749999999993,
+                               "larva":  0,
                                "otherExpenses":  0,
                                "gas":  0,
                                "dailyLabour":  500,
-                               "totalCostInDay":  1225.02
+                               "totalCostInDay":  1225.0175,
+                               "finalPerBirdCost":  0.52463276231263378
                            },
                            {
                                "id":  "2026-03-13",
@@ -520,12 +608,14 @@
                                "totalCost":  0,
                                "feedPerKg":  45,
                                "perBirdFeedGrams":  8.6,
-                               "totalFeedKg":  20,
-                               "totalFeedCost":  900.94,
+                               "totalFeedKg":  20.020799999999998,
+                               "totalFeedCost":  900.93599999999992,
+                               "larva":  0,
                                "otherExpenses":  100,
                                "gas":  0,
                                "dailyLabour":  500,
-                               "totalCostInDay":  1500.94
+                               "totalCostInDay":  1500.936,
+                               "finalPerBirdCost":  0.64473195876288658
                            },
                            {
                                "id":  "2026-03-14",
@@ -534,13 +624,15 @@
                                "perBirdCost":  0,
                                "totalCost":  0,
                                "feedPerKg":  45,
-                               "perBirdFeedGrams":  9.5,
+                               "perBirdFeedGrams":  9.4991364421416229,
                                "totalFeedKg":  22,
                                "totalFeedCost":  990,
+                               "larva":  0,
                                "otherExpenses":  0,
                                "gas":  0,
                                "dailyLabour":  500,
-                               "totalCostInDay":  1490
+                               "totalCostInDay":  1490,
+                               "finalPerBirdCost":  0.64335060449050085
                            },
                            {
                                "id":  "2026-03-15",
@@ -549,13 +641,15 @@
                                "perBirdCost":  0,
                                "totalCost":  0,
                                "feedPerKg":  45,
-                               "perBirdFeedGrams":  11.74,
+                               "perBirdFeedGrams":  11.744236624619399,
                                "totalFeedKg":  27,
                                "totalFeedCost":  1215,
+                               "larva":  0,
                                "otherExpenses":  0,
                                "gas":  0,
                                "dailyLabour":  500,
-                               "totalCostInDay":  1715
+                               "totalCostInDay":  1715,
+                               "finalPerBirdCost":  0.74597651152675071
                            },
                            {
                                "id":  "2026-03-16",
@@ -564,13 +658,15 @@
                                "perBirdCost":  0,
                                "totalCost":  0,
                                "feedPerKg":  45,
-                               "perBirdFeedGrams":  13.97,
+                               "perBirdFeedGrams":  13.973799126637555,
                                "totalFeedKg":  32,
                                "totalFeedCost":  1440,
+                               "larva":  0,
                                "otherExpenses":  0,
                                "gas":  0,
                                "dailyLabour":  500,
-                               "totalCostInDay":  1940
+                               "totalCostInDay":  1940,
+                               "finalPerBirdCost":  0.84716157205240172
                            },
                            {
                                "id":  "2026-03-17",
@@ -579,13 +675,15 @@
                                "perBirdCost":  0,
                                "totalCost":  0,
                                "feedPerKg":  45,
-                               "perBirdFeedGrams":  15.33,
+                               "perBirdFeedGrams":  15.330705212439772,
                                "totalFeedKg":  35,
                                "totalFeedCost":  1575,
+                               "larva":  0,
                                "otherExpenses":  0,
                                "gas":  0,
                                "dailyLabour":  500,
-                               "totalCostInDay":  2075
+                               "totalCostInDay":  2075,
+                               "finalPerBirdCost":  0.90889180902321509
                            },
                            {
                                "id":  "2026-03-18",
@@ -594,13 +692,15 @@
                                "perBirdCost":  0,
                                "totalCost":  0,
                                "feedPerKg":  45,
-                               "perBirdFeedGrams":  16.25,
+                               "perBirdFeedGrams":  16.249451032059728,
                                "totalFeedKg":  37,
                                "totalFeedCost":  1665,
+                               "larva":  0,
                                "otherExpenses":  0,
                                "gas":  0,
                                "dailyLabour":  500,
-                               "totalCostInDay":  2165
+                               "totalCostInDay":  2165,
+                               "finalPerBirdCost":  0.950812472551603
                            },
                            {
                                "id":  "2026-03-19",
@@ -609,13 +709,15 @@
                                "perBirdCost":  0,
                                "totalCost":  0,
                                "feedPerKg":  45,
-                               "perBirdFeedGrams":  15.91,
+                               "perBirdFeedGrams":  15.908086610693768,
                                "totalFeedKg":  36,
                                "totalFeedCost":  1620,
+                               "larva":  0,
                                "otherExpenses":  600,
                                "gas":  0,
                                "dailyLabour":  500,
-                               "totalCostInDay":  2720
+                               "totalCostInDay":  2720,
+                               "finalPerBirdCost":  1.2019443216968626
                            },
                            {
                                "id":  "2026-03-20",
@@ -624,13 +726,15 @@
                                "perBirdCost":  0,
                                "totalCost":  0,
                                "feedPerKg":  45,
-                               "perBirdFeedGrams":  16.85,
+                               "perBirdFeedGrams":  16.851441241685144,
                                "totalFeedKg":  38,
                                "totalFeedCost":  1710,
+                               "larva":  0,
                                "otherExpenses":  0,
                                "gas":  0,
                                "dailyLabour":  500,
-                               "totalCostInDay":  2210
+                               "totalCostInDay":  2210,
+                               "finalPerBirdCost":  0.98004434589800449
                            },
                            {
                                "id":  "2026-03-21",
@@ -639,13 +743,15 @@
                                "perBirdCost":  0,
                                "totalCost":  0,
                                "feedPerKg":  45,
-                               "perBirdFeedGrams":  17.8,
+                               "perBirdFeedGrams":  17.80151312861593,
                                "totalFeedKg":  40,
                                "totalFeedCost":  1800,
+                               "larva":  0,
                                "otherExpenses":  0,
                                "gas":  0,
                                "dailyLabour":  500,
-                               "totalCostInDay":  2300
+                               "totalCostInDay":  2300,
+                               "finalPerBirdCost":  1.0235870048954161
                            },
                            {
                                "id":  "2026-03-22",
@@ -654,13 +760,15 @@
                                "perBirdCost":  0,
                                "totalCost":  0,
                                "feedPerKg":  45,
-                               "perBirdFeedGrams":  20.52,
+                               "perBirdFeedGrams":  20.517395182872438,
                                "totalFeedKg":  46,
                                "totalFeedCost":  2070,
+                               "larva":  0,
                                "otherExpenses":  2250,
                                "gas":  0,
                                "dailyLabour":  500,
-                               "totalCostInDay":  4820
+                               "totalCostInDay":  4820,
+                               "finalPerBirdCost":  2.1498661909009811
                            },
                            {
                                "id":  "2026-03-23",
@@ -672,10 +780,12 @@
                                "perBirdFeedGrams":  18.75,
                                "totalFeedKg":  42,
                                "totalFeedCost":  1890,
+                               "larva":  0,
                                "otherExpenses":  0,
                                "gas":  0,
                                "dailyLabour":  500,
-                               "totalCostInDay":  2390
+                               "totalCostInDay":  2390,
+                               "finalPerBirdCost":  1.0669642857142858
                            },
                            {
                                "id":  "2026-03-24",
@@ -684,13 +794,15 @@
                                "perBirdCost":  0,
                                "totalCost":  0,
                                "feedPerKg":  45,
-                               "perBirdFeedGrams":  17.88,
+                               "perBirdFeedGrams":  17.881090746535538,
                                "totalFeedKg":  40,
                                "totalFeedCost":  1800,
+                               "larva":  0,
                                "otherExpenses":  0,
                                "gas":  0,
                                "dailyLabour":  500,
-                               "totalCostInDay":  2300
+                               "totalCostInDay":  2300,
+                               "finalPerBirdCost":  1.0281627179257935
                            },
                            {
                                "id":  "2026-03-25",
@@ -699,13 +811,15 @@
                                "perBirdCost":  0,
                                "totalCost":  0,
                                "feedPerKg":  45,
-                               "perBirdFeedGrams":  19.27,
+                               "perBirdFeedGrams":  19.265232974910397,
                                "totalFeedKg":  43,
                                "totalFeedCost":  1935,
+                               "larva":  0,
                                "otherExpenses":  0,
                                "gas":  0,
                                "dailyLabour":  500,
-                               "totalCostInDay":  2435
+                               "totalCostInDay":  2435,
+                               "finalPerBirdCost":  1.0909498207885304
                            },
                            {
                                "id":  "2026-03-26",
@@ -714,14 +828,343 @@
                                "perBirdCost":  0,
                                "totalCost":  0,
                                "feedPerKg":  45,
-                               "perBirdFeedGrams":  13.46,
+                               "perBirdFeedGrams":  13.464991023339318,
                                "totalFeedKg":  30,
                                "totalFeedCost":  1350,
-                               "otherExpenses":  15,
+                               "larva":  15,
+                               "otherExpenses":  0,
                                "gas":  0,
                                "dailyLabour":  500,
-                               "totalCostInDay":  1865
+                               "totalCostInDay":  1865,
+                               "finalPerBirdCost":  0.83707360861759428
+                           },
+                           {
+                               "id":  "2026-03-27",
+                               "reportDate":  "2026-03-27",
+                               "birdCount":  2226,
+                               "perBirdCost":  0,
+                               "totalCost":  0,
+                               "feedPerKg":  45,
+                               "perBirdFeedGrams":  4.4923629829290208,
+                               "totalFeedKg":  10,
+                               "totalFeedCost":  450,
+                               "larva":  930,
+                               "otherExpenses":  0,
+                               "gas":  0,
+                               "dailyLabour":  500,
+                               "totalCostInDay":  1880,
+                               "finalPerBirdCost":  0.84456424079065584
+                           },
+                           {
+                               "id":  "2026-03-28",
+                               "reportDate":  "2026-03-28",
+                               "birdCount":  2222,
+                               "perBirdCost":  0,
+                               "totalCost":  0,
+                               "feedPerKg":  45,
+                               "perBirdFeedGrams":  6.7506750675067506,
+                               "totalFeedKg":  15,
+                               "totalFeedCost":  675,
+                               "larva":  1260,
+                               "otherExpenses":  0,
+                               "gas":  0,
+                               "dailyLabour":  500,
+                               "totalCostInDay":  2435,
+                               "finalPerBirdCost":  1.0958595859585958
+                           },
+                           {
+                               "id":  "2026-03-29",
+                               "reportDate":  "2026-03-29",
+                               "birdCount":  2220,
+                               "perBirdCost":  0,
+                               "totalCost":  0,
+                               "feedPerKg":  45,
+                               "perBirdFeedGrams":  9.00900900900901,
+                               "totalFeedKg":  20,
+                               "totalFeedCost":  900,
+                               "larva":  1110,
+                               "otherExpenses":  0,
+                               "gas":  0,
+                               "dailyLabour":  500,
+                               "totalCostInDay":  2510,
+                               "finalPerBirdCost":  1.1306306306306306
+                           },
+                           {
+                               "id":  "2026-03-30",
+                               "reportDate":  "2026-03-30",
+                               "birdCount":  2220,
+                               "perBirdCost":  0,
+                               "totalCost":  0,
+                               "feedPerKg":  45,
+                               "perBirdFeedGrams":  9.90990990990991,
+                               "totalFeedKg":  22,
+                               "totalFeedCost":  990,
+                               "larva":  1020,
+                               "otherExpenses":  0,
+                               "gas":  0,
+                               "dailyLabour":  500,
+                               "totalCostInDay":  2510,
+                               "finalPerBirdCost":  1.1306306306306306
+                           },
+                           {
+                               "id":  "2026-03-31",
+                               "reportDate":  "2026-03-31",
+                               "birdCount":  2218,
+                               "perBirdCost":  0,
+                               "totalCost":  0,
+                               "feedPerKg":  45,
+                               "perBirdFeedGrams":  9.4679891794409379,
+                               "totalFeedKg":  21,
+                               "totalFeedCost":  945,
+                               "larva":  1140,
+                               "otherExpenses":  0,
+                               "gas":  0,
+                               "dailyLabour":  500,
+                               "totalCostInDay":  2585,
+                               "finalPerBirdCost":  1.1654643823264201
+                           },
+                           {
+                               "id":  "2026-04-01",
+                               "reportDate":  "2026-04-01",
+                               "birdCount":  2215,
+                               "perBirdCost":  0,
+                               "totalCost":  0,
+                               "feedPerKg":  45,
+                               "perBirdFeedGrams":  13.544018058690744,
+                               "totalFeedKg":  30,
+                               "totalFeedCost":  1350,
+                               "larva":  1125,
+                               "otherExpenses":  0,
+                               "gas":  0,
+                               "dailyLabour":  500,
+                               "totalCostInDay":  2975,
+                               "finalPerBirdCost":  1.3431151241534989
+                           },
+                           {
+                               "id":  "2026-04-02",
+                               "reportDate":  "2026-04-02",
+                               "birdCount":  2212,
+                               "perBirdCost":  0,
+                               "totalCost":  0,
+                               "feedPerKg":  45,
+                               "perBirdFeedGrams":  20.343580470162749,
+                               "totalFeedKg":  45,
+                               "totalFeedCost":  2025,
+                               "larva":  1200,
+                               "otherExpenses":  2250,
+                               "gas":  0,
+                               "dailyLabour":  500,
+                               "totalCostInDay":  5975,
+                               "finalPerBirdCost":  2.7011754068716094
+                           },
+                           {
+                               "id":  "2026-04-04",
+                               "reportDate":  "2026-04-04",
+                               "birdCount":  2207,
+                               "perBirdCost":  0,
+                               "totalCost":  0,
+                               "feedPerKg":  45,
+                               "perBirdFeedGrams":  21.748980516538289,
+                               "totalFeedKg":  48,
+                               "totalFeedCost":  2160,
+                               "larva":  0,
+                               "otherExpenses":  0,
+                               "gas":  0,
+                               "dailyLabour":  500,
+                               "totalCostInDay":  2660,
+                               "finalPerBirdCost":  1.20525600362483
+                           },
+                           {
+                               "id":  "2026-04-05",
+                               "reportDate":  "2026-04-05",
+                               "birdCount":  2204,
+                               "perBirdCost":  0,
+                               "totalCost":  0,
+                               "feedPerKg":  45,
+                               "perBirdFeedGrams":  21.324863883847549,
+                               "totalFeedKg":  47,
+                               "totalFeedCost":  2115,
+                               "larva":  0,
+                               "otherExpenses":  0,
+                               "gas":  0,
+                               "dailyLabour":  500,
+                               "totalCostInDay":  2615,
+                               "finalPerBirdCost":  1.1864791288566243
+                           },
+                           {
+                               "id":  "2026-04-06",
+                               "reportDate":  "2026-04-06",
+                               "birdCount":  2202,
+                               "perBirdCost":  0,
+                               "totalCost":  0,
+                               "feedPerKg":  45,
+                               "perBirdFeedGrams":  22.252497729336966,
+                               "totalFeedKg":  49,
+                               "totalFeedCost":  2205,
+                               "larva":  0,
+                               "otherExpenses":  0,
+                               "gas":  0,
+                               "dailyLabour":  500,
+                               "totalCostInDay":  2705,
+                               "finalPerBirdCost":  1.2284287011807449
                            }
                        ],
-    "larvaCostingReports":  []
+    "larvaCostingReports":  [
+                                {
+                                    "id":  "2026-03-18",
+                                    "reportDate":  "2026-03-18",
+                                    "larvaEggGrams":  "280 GRMS",
+                                    "larvaCost":  2500,
+                                    "ethanolSyrup":  0,
+                                    "brokenRiceCake":  1568,
+                                    "others":  575,
+                                    "labour":  400,
+                                    "total":  5043,
+                                    "quailFeedLarva":  0
+                                },
+                                {
+                                    "id":  "2026-03-22",
+                                    "reportDate":  "2026-03-22",
+                                    "larvaEggGrams":  "",
+                                    "larvaCost":  0,
+                                    "ethanolSyrup":  540,
+                                    "brokenRiceCake":  1280,
+                                    "others":  50,
+                                    "labour":  400,
+                                    "total":  2270,
+                                    "quailFeedLarva":  0
+                                },
+                                {
+                                    "id":  "2026-03-23",
+                                    "reportDate":  "2026-03-23",
+                                    "larvaEggGrams":  "",
+                                    "larvaCost":  0,
+                                    "ethanolSyrup":  0,
+                                    "brokenRiceCake":  0,
+                                    "others":  0,
+                                    "labour":  400,
+                                    "total":  400,
+                                    "quailFeedLarva":  0
+                                },
+                                {
+                                    "id":  "2026-03-24",
+                                    "reportDate":  "2026-03-24",
+                                    "larvaEggGrams":  "",
+                                    "larvaCost":  0,
+                                    "ethanolSyrup":  300,
+                                    "brokenRiceCake":  800,
+                                    "others":  0,
+                                    "labour":  400,
+                                    "total":  1500,
+                                    "quailFeedLarva":  0
+                                },
+                                {
+                                    "id":  "2026-03-25",
+                                    "reportDate":  "2026-03-25",
+                                    "larvaEggGrams":  "",
+                                    "larvaCost":  0,
+                                    "ethanolSyrup":  300,
+                                    "brokenRiceCake":  800,
+                                    "others":  0,
+                                    "labour":  400,
+                                    "total":  1500,
+                                    "quailFeedLarva":  0
+                                },
+                                {
+                                    "id":  "2026-03-26",
+                                    "reportDate":  "2026-03-26",
+                                    "larvaEggGrams":  "",
+                                    "larvaCost":  0,
+                                    "ethanolSyrup":  300,
+                                    "brokenRiceCake":  0,
+                                    "others":  0,
+                                    "labour":  400,
+                                    "total":  700,
+                                    "quailFeedLarva":  0.5
+                                },
+                                {
+                                    "id":  "2026-03-27",
+                                    "reportDate":  "2026-03-27",
+                                    "larvaEggGrams":  "",
+                                    "larvaCost":  0,
+                                    "ethanolSyrup":  240,
+                                    "brokenRiceCake":  0,
+                                    "others":  0,
+                                    "labour":  400,
+                                    "total":  640,
+                                    "quailFeedLarva":  31
+                                },
+                                {
+                                    "id":  "2026-03-28",
+                                    "reportDate":  "2026-03-28",
+                                    "larvaEggGrams":  "",
+                                    "larvaCost":  0,
+                                    "ethanolSyrup":  99,
+                                    "brokenRiceCake":  160,
+                                    "others":  0,
+                                    "labour":  400,
+                                    "total":  659,
+                                    "quailFeedLarva":  42
+                                },
+                                {
+                                    "id":  "2026-03-29",
+                                    "reportDate":  "2026-03-29",
+                                    "larvaEggGrams":  "",
+                                    "larvaCost":  0,
+                                    "ethanolSyrup":  75,
+                                    "brokenRiceCake":  0,
+                                    "others":  0,
+                                    "labour":  400,
+                                    "total":  475,
+                                    "quailFeedLarva":  37
+                                },
+                                {
+                                    "id":  "2026-03-30",
+                                    "reportDate":  "2026-03-30",
+                                    "larvaEggGrams":  "",
+                                    "larvaCost":  0,
+                                    "ethanolSyrup":  90,
+                                    "brokenRiceCake":  0,
+                                    "others":  0,
+                                    "labour":  400,
+                                    "total":  490,
+                                    "quailFeedLarva":  34
+                                },
+                                {
+                                    "id":  "2026-03-31",
+                                    "reportDate":  "2026-03-31",
+                                    "larvaEggGrams":  "",
+                                    "larvaCost":  0,
+                                    "ethanolSyrup":  72,
+                                    "brokenRiceCake":  0,
+                                    "others":  0,
+                                    "labour":  400,
+                                    "total":  472,
+                                    "quailFeedLarva":  38
+                                },
+                                {
+                                    "id":  "2026-04-01",
+                                    "reportDate":  "2026-04-01",
+                                    "larvaEggGrams":  "",
+                                    "larvaCost":  0,
+                                    "ethanolSyrup":  63,
+                                    "brokenRiceCake":  0,
+                                    "others":  0,
+                                    "labour":  400,
+                                    "total":  463,
+                                    "quailFeedLarva":  37.5
+                                },
+                                {
+                                    "id":  "2026-04-02",
+                                    "reportDate":  "2026-04-02",
+                                    "larvaEggGrams":  "",
+                                    "larvaCost":  0,
+                                    "ethanolSyrup":  60,
+                                    "brokenRiceCake":  0,
+                                    "others":  0,
+                                    "labour":  400,
+                                    "total":  460,
+                                    "quailFeedLarva":  40
+                                }
+                            ]
 }
